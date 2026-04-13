@@ -1,55 +1,129 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 @AGENTS.md
 
-# Fuel Distribution Management System — CLAUDE.md
+---
 
-Always read this file before making any changes to the codebase.
+## Commands
+
+```bash
+# Development
+npm run dev          # Start dev server at http://localhost:3000
+
+# Build & production
+npm run build
+npm start
+
+# Database
+npx prisma migrate dev --name <migration-name>   # Create and apply a migration
+npx prisma db push                               # Push schema without a migration file (prototyping)
+npx prisma db seed                               # Run prisma/seed.ts
+npx prisma studio                                # Open Prisma Studio GUI
+npx prisma generate                              # Regenerate Prisma Client after schema changes
+```
+
+TypeScript is checked by Next.js on build. There is no separate lint script configured yet.
 
 ---
 
 ## Project Overview
 
-A web-based system for the Bangladesh government to monitor and control fuel distribution during a fuel crisis. Three user roles with separate dashboards. All data is dummy/seeded — no real external APIs.
+Bangladesh government fuel distribution monitoring system. Three user roles — Vehicle Owner, Petrol Pump Operator, Government Admin — each with a separate dashboard. All external data (BRTA vehicle registry, pump registry) is dummy/seeded; no real external APIs.
+
+**V1 scope:** Simple login only (3 pre-seeded accounts). No registration, no push notifications. Owners see fresh data on page load.
 
 ---
 
-## Tech Stack
+## Architecture
+
+### Stack
 
 | Layer | Choice |
 |---|---|
-| Framework | Next.js 14 (App Router, no src/ dir) |
-| Database | PostgreSQL |
-| ORM | Prisma 5 |
-| Auth | NextAuth.js v4 (credentials provider, JWT strategy) |
-| UI | Tailwind CSS + shadcn/ui |
+| Framework | Next.js 16 (App Router, no `src/` dir) |
+| Database | **SQLite** via Prisma 5 (file: `prisma/dev.db`) — no server needed |
+| Auth | NextAuth.js v4 — credentials provider, JWT strategy |
+| UI | Tailwind CSS v4 + shadcn/ui (base-ui variant) |
 | Charts | Recharts |
-| Forms | React Hook Form + Zod |
-| Data fetching | SWR (client-side), fetch in Server Components |
+| Forms | React Hook Form + Zod v4 |
+| Client data | SWR |
 | Dates | date-fns |
-| Passwords | bcryptjs |
+| Toasts | Sonner (via `components/ui/sonner.tsx`) |
+
+### SQLite + Prisma enums note
+
+SQLite does not support Prisma enums. All `Role`, `VehicleType`, and `TransactionStatus` fields are stored as plain `String` in the DB. The canonical values live in `types/index.ts` as `const` objects and are used for all comparisons and validations.
+
+### Next.js 16 notes
+
+- Route protection file is `proxy.ts` (not `middleware.ts`) — Next.js 16 renamed this convention.
+- `params` in dynamic route handlers is a `Promise` and must be awaited: `const { id } = await params`.
+- `searchParams` in Server Component page props is also a `Promise` and must be awaited.
+
+### Tailwind CSS v4 note
+
+This project uses **Tailwind v4**, which imports via `@import "tailwindcss"` in `globals.css` — not via `tailwind.config.js`. There is no `tailwind.config.ts`. Custom tokens are defined with `@theme inline { ... }` in CSS. When adding new theme tokens, add them there.
+
+### shadcn/ui note
+
+Components were generated with the `base-ui` variant. They import from `@base-ui/react/*` rather than `@radix-ui/*`. Do not manually edit files in `components/ui/` — regenerate them with `npx shadcn@latest add <component>` if changes are needed. Use `cn()` from `lib/utils.ts` for class merging.
+
+### App Router structure
+
+```
+app/
+├── layout.tsx                  # Root layout — add <Toaster /> here
+├── page.tsx                    # Root: redirect to /login or role dashboard
+├── (auth)/login/               # Login page (no sidebar)
+├── (dashboard)/                # Shared layout with sidebar + topbar
+│   ├── owner/                  # VEHICLE_OWNER pages
+│   ├── operator/               # OPERATOR pages
+│   └── admin/                  # ADMIN pages
+└── api/
+    ├── auth/[...nextauth]/     # NextAuth handler
+    ├── owner/                  # Owner API routes
+    ├── operator/               # Operator API routes
+    └── admin/                  # Admin API routes
+```
+
+Route protection is handled in `middleware.ts` (to be created) using NextAuth `getToken`.
+
+### Business logic
+
+All non-trivial logic lives in `lib/` — route handlers are thin wrappers:
+
+- `lib/prisma.ts` — Prisma client singleton (never instantiate `PrismaClient` elsewhere)
+- `lib/auth.ts` — NextAuth config with role-aware JWT callbacks
+- `lib/eligibility.ts` — Core quota check: finds latest approved transaction, compares against `DistributionRule.restrictionDays`
+- `lib/scheduler.ts` — Auto-assigns next `FuelSchedule` after a successful dispense
+- `lib/validators/` — Zod schemas for API input validation
+
+### Critical flow: fuel dispensing
+
+The operator dispense endpoint (`POST /api/operator/dispense`) must:
+1. Re-run eligibility check **inside** a `prisma.$transaction()` to prevent race conditions
+2. Insert `FuelTransaction`
+3. Call `assignNextSchedule()`
+4. Commit
+
+This is the only place a full Prisma transaction is strictly required.
+
+### Database
+
+Key relationships:
+- `Vehicle` → `FuelTransaction[]` (history)
+- `Vehicle` → `FuelSchedule[]` (upcoming slots)
+- `User` (OPERATOR) → `FuelTransaction[]` (who dispensed)
+- `DistributionRule` — one row per `VehicleType`, admin-editable at runtime
+- `BrtaVehicle` + `PumpRegistry` — read-only reference tables, only queried during registration validation
+
+In V1, `Vehicle` rows are pre-seeded (no user-facing registration). The single owner account can view all seeded vehicles.
 
 ---
 
-## V1 Scope (what is and isn't built)
-
-### Included
-- Simple login (email + password) — 3 pre-seeded accounts, one per role
-- No user registration — accounts are seeded only
-- Vehicle owner sees data updates on page load (no push notifications)
-- Three role dashboards: Vehicle Owner, Petrol Pump Operator, Government Admin
-- Core fuel eligibility engine with restriction periods
-- Auto-scheduling of next refuel slot after dispensing
-- Dummy BRTA vehicle table and pump registry table (read-only reference data)
-
-### Excluded from V1
-- User registration / sign-up flow
-- Push notifications / real-time updates
-- Email notifications
-- SMS alerts
-- Real external APIs (BRTA, pump registry are dummy tables)
-
----
-
-## User Roles & Credentials (seeded)
+## Seeded Accounts (V1)
 
 | Role | Email | Password |
 |---|---|---|
@@ -59,134 +133,36 @@ A web-based system for the Bangladesh government to monitor and control fuel dis
 
 ---
 
-## Fuel Distribution Rules (seeded, admin-editable)
+## Fuel Distribution Rules (seeded defaults)
 
-| Vehicle Type | Max Liters/Cycle | Restriction Days |
+| Vehicle Type | Max Liters | Restriction Days |
 |---|---|---|
-| MOTORCYCLE | 4 L | 3 days |
-| CNG_AUTO_RICKSHAW | 3 L | 2 days |
-| CAR | 10 L | 3 days |
-| MICROBUS | 15 L | 3 days |
-| TRUCK | 20 L | 2 days |
-| BUS | 30 L | 2 days |
-
----
-
-## Folder Structure
-
-```
-fuel-app/
-├── CLAUDE.md                    # This file — read before every action
-├── prisma/
-│   ├── schema.prisma            # Full data model
-│   └── seed.ts                  # Seed script — dummy data
-├── app/
-│   ├── layout.tsx               # Root layout
-│   ├── page.tsx                 # Root redirect (→ /login or dashboard)
-│   ├── (auth)/
-│   │   └── login/
-│   │       └── page.tsx
-│   ├── (dashboard)/
-│   │   ├── layout.tsx           # Shared sidebar + topbar shell
-│   │   ├── owner/
-│   │   │   ├── page.tsx         # Overview: eligibility status, recent transactions
-│   │   │   ├── history/page.tsx
-│   │   │   └── schedule/page.tsx
-│   │   ├── operator/
-│   │   │   ├── page.tsx         # Dispense fuel main screen
-│   │   │   └── history/page.tsx
-│   │   └── admin/
-│   │       ├── page.tsx         # Stats overview with charts
-│   │       ├── transactions/page.tsx
-│   │       ├── users/page.tsx
-│   │       ├── rules/page.tsx
-│   │       └── reports/page.tsx
-│   └── api/
-│       ├── auth/
-│       │   └── [...nextauth]/route.ts
-│       ├── owner/
-│       │   ├── vehicles/route.ts
-│       │   ├── vehicles/[vehicleId]/history/route.ts
-│       │   ├── vehicles/[vehicleId]/schedule/route.ts
-│       │   └── vehicles/[vehicleId]/status/route.ts
-│       ├── operator/
-│       │   ├── eligibility-check/route.ts
-│       │   ├── dispense/route.ts
-│       │   └── transactions/route.ts
-│       └── admin/
-│           ├── stats/overview/route.ts
-│           ├── stats/by-vehicle-type/route.ts
-│           ├── transactions/route.ts
-│           ├── users/route.ts
-│           ├── users/[id]/status/route.ts
-│           ├── rules/route.ts
-│           ├── rules/[vehicleType]/route.ts
-│           └── reports/export/route.ts
-├── components/
-│   ├── ui/                      # shadcn/ui components (do not edit manually)
-│   ├── layout/
-│   │   ├── Sidebar.tsx          # Role-aware sidebar navigation
-│   │   └── Topbar.tsx           # Top bar with user info + logout
-│   ├── dashboard/
-│   │   ├── StatCard.tsx
-│   │   └── TransactionTable.tsx
-│   ├── charts/
-│   │   ├── FuelByTypeChart.tsx
-│   │   ├── DailyTrendChart.tsx
-│   │   └── DistrictPieChart.tsx
-│   └── operator/
-│       ├── EligibilityChecker.tsx
-│       └── EligibilityResult.tsx
-├── lib/
-│   ├── prisma.ts                # Prisma client singleton
-│   ├── auth.ts                  # NextAuth config
-│   ├── eligibility.ts           # Core quota check logic
-│   ├── scheduler.ts             # Auto-assign next schedule
-│   └── validators/
-│       ├── dispense.ts          # Zod schema for dispense request
-│       └── rules.ts             # Zod schema for rule updates
-├── types/
-│   └── index.ts                 # Shared TypeScript types
-└── middleware.ts                 # Route protection (auth + role guards)
-```
-
----
-
-## Database Schema (tables)
-
-- `brta_vehicles` — dummy BRTA reference (read-only, used in registration validation)
-- `pump_registry` — dummy govt pump reference (read-only)
-- `users` — all three roles
-- `operator_profiles` — operator-specific: trade license, pump name/address
-- `vehicles` — registered vehicles linked to owners
-- `distribution_rules` — quota rules per vehicle type (admin-editable at runtime)
-- `fuel_transactions` — every dispense event (APPROVED / BLOCKED / PARTIAL)
-- `fuel_schedules` — auto-assigned next refuel slot per vehicle
+| MOTORCYCLE | 4 L | 3 |
+| CNG_AUTO_RICKSHAW | 3 L | 2 |
+| CAR | 10 L | 3 |
+| MICROBUS | 15 L | 3 |
+| TRUCK | 20 L | 2 |
+| BUS | 30 L | 2 |
 
 ---
 
 ## Coding Conventions
 
-- Use TypeScript everywhere — no `any` unless absolutely unavoidable
-- Server Components by default; add `"use client"` only when needed (forms, hooks, charts)
-- API route handlers validate input with Zod before touching the DB
-- All DB writes that affect eligibility use `prisma.$transaction()` to prevent race conditions
-- Use `lib/prisma.ts` singleton — never instantiate `PrismaClient` directly in route handlers
-- Keep business logic in `lib/` — route handlers should be thin (validate → call lib → respond)
-- Use `date-fns` for all date arithmetic — no manual ms calculations
-- Error responses: `{ error: string }` with appropriate HTTP status codes
-- Success responses: return the relevant data object directly (no wrapper)
-- shadcn/ui components live in `components/ui/` — do not manually edit them
-- Tailwind only — no inline styles, no CSS modules
+- Server Components by default; `"use client"` only for forms, hooks, charts
+- API routes: validate with Zod → call `lib/` function → return response. No business logic in route files.
+- Error shape: `{ error: string }` with appropriate HTTP status
+- Date arithmetic: always use `date-fns` (`addDays`, `isBefore`, etc.)
+- Toast notifications: `import { toast } from "sonner"` — `toast.success(...)` / `toast.error(...)`
+- `@/*` path alias maps to the project root (e.g. `@/lib/prisma`, `@/components/ui/button`)
+- Zod v4: use `.issues` not `.errors` on `ZodError`; `invalid_type_error` option removed from `z.number()`
 
 ---
 
 ## Rules
 
-1. Always read CLAUDE.md before making any code changes.
+1. Read this file before making any changes.
 2. Do not add features outside V1 scope without explicit user instruction.
-3. Do not create registration pages or flows — login only.
-4. Do not add push notifications — owners see fresh data on page load.
-5. Keep code simple and well-documented — no over-engineering.
-6. Do not install new packages without confirming with the user first.
-7. After every phase completion, update this file with any new conventions or structural changes.
+3. No registration pages — login only.
+4. No push notifications — owners see fresh data on page load via SWR or Server Component re-fetch.
+5. Do not install new packages without confirming with the user first.
+6. Update this file after every phase that adds new structure or conventions.

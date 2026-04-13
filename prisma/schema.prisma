@@ -3,23 +3,28 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 // ─── Reference Tables (dummy government databases, read-only) ─────────────
 
+// Role values: VEHICLE_OWNER | OPERATOR | ADMIN
+// VehicleType values: MOTORCYCLE | CNG_AUTO_RICKSHAW | CAR | MICROBUS | TRUCK | BUS
+// TransactionStatus values: APPROVED | BLOCKED | PARTIAL
+// SQLite does not support enums; values are validated in application code via TypeScript constants.
+
 model BrtaVehicle {
-  id            String      @id @default(cuid())
-  licenseNumber String      @unique
+  id            String   @id @default(cuid())
+  licenseNumber String   @unique
   ownerNid      String
   ownerName     String
-  vehicleType   VehicleType
+  vehicleType   String   // VehicleType
   make          String
   model         String
   year          Int
-  isActive      Boolean     @default(true)
-  createdAt     DateTime    @default(now())
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
 
   @@map("brta_vehicles")
 }
@@ -38,38 +43,13 @@ model PumpRegistry {
   @@map("pump_registry")
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────
-
-enum Role {
-  VEHICLE_OWNER
-  OPERATOR
-  ADMIN
-}
-
-enum VehicleType {
-  MOTORCYCLE
-  CNG_AUTO_RICKSHAW
-  CAR
-  MICROBUS
-  TRUCK
-  BUS
-}
-
-enum TransactionStatus {
-  APPROVED
-  BLOCKED
-  PARTIAL
-}
-
-// ─── Core Application Tables ──────────────────────────────────────────────
-
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
   fullName     String
   phone        String?
-  role         Role
+  role         String   // Role
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -95,17 +75,16 @@ model OperatorProfile {
   @@map("operator_profiles")
 }
 
-// Vehicles are pre-seeded and linked to the single owner account in V1
 model Vehicle {
-  id            String      @id @default(cuid())
-  licenseNumber String      @unique
-  vehicleType   VehicleType
+  id            String   @id @default(cuid())
+  licenseNumber String   @unique
+  vehicleType   String   // VehicleType
   make          String
   model         String
   year          Int
-  ownerName     String      // denormalized from BRTA for display
-  isActive      Boolean     @default(true)
-  registeredAt  DateTime    @default(now())
+  ownerName     String
+  isActive      Boolean  @default(true)
+  registeredAt  DateTime @default(now())
 
   transactions FuelTransaction[]
   schedules    FuelSchedule[]
@@ -113,28 +92,27 @@ model Vehicle {
   @@map("vehicles")
 }
 
-// Admin-editable quota rules per vehicle type
 model DistributionRule {
-  id                String      @id @default(cuid())
-  vehicleType       VehicleType @unique
+  id                String   @id @default(cuid())
+  vehicleType       String   @unique // VehicleType
   maxLitersPerCycle Float
   restrictionDays   Int
   description       String?
-  updatedAt         DateTime    @updatedAt
+  updatedAt         DateTime @updatedAt
 
   @@map("distribution_rules")
 }
 
 model FuelTransaction {
-  id              String            @id @default(cuid())
+  id              String   @id @default(cuid())
   vehicleId       String
   operatorId      String
   litersRequested Float
   litersDispensed Float
-  status          TransactionStatus
-  pumpName        String            // denormalized for historical accuracy
+  status          String   // TransactionStatus
+  pumpName        String
   pumpDistrict    String
-  transactedAt    DateTime          @default(now())
+  transactedAt    DateTime @default(now())
   notes           String?
 
   vehicle  Vehicle @relation(fields: [vehicleId], references: [id])
@@ -151,7 +129,7 @@ model FuelSchedule {
   pumpName      String
   pumpDistrict  String
   scheduledDate DateTime
-  timeSlot      String   // e.g. "09:00-10:00"
+  timeSlot      String
   isCompleted   Boolean  @default(false)
   isCancelled   Boolean  @default(false)
   createdAt     DateTime @default(now())
