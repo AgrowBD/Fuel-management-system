@@ -1,5 +1,6 @@
 import { addDays } from "date-fns";
 import { prisma } from "@/lib/prisma";
+import { checkEligibility } from "@/lib/eligibility";
 
 const TIME_SLOTS = [
   "08:00-09:00",
@@ -10,44 +11,44 @@ const TIME_SLOTS = [
   "15:00-16:00",
 ];
 
-/**
- * Assigns the next fuel schedule for a vehicle after a successful dispense.
- * Cancels any existing pending schedule and creates a new one.
- */
+// Assigns the next fuel schedule for a vehicle after a dispense.
+// If the cycle is still open (partial fill), schedule for the next day so
+// the owner can come back to claim the remaining quota. If the cycle is
+// closed (quota exhausted), schedule for the cycle-expiry date.
 export async function assignNextSchedule(
   vehicleId: string,
-  lastTransactionAt: Date,
   operatorPumpName: string,
   operatorPumpDistrict: string,
-  vehicleType: string
+  licenseNumber: string
 ): Promise<void> {
-  const rule = await prisma.distributionRule.findUnique({
-    where: { vehicleType },
-  });
+  const eligibility = await checkEligibility(licenseNumber);
 
-  const restrictionDays = rule?.restrictionDays ?? 3;
+  let scheduledDate: Date;
+  if (eligibility.eligible) {
+    // Partial fill — remainder still claimable, invite owner back tomorrow.
+    scheduledDate = addDays(new Date(), 1);
+  } else if (eligibility.reason === "IN_RESTRICTION_PERIOD") {
+    scheduledDate = new Date(eligibility.restrictionEndsAt);
+  } else {
+    return;
+  }
 
-  // Next eligible date = last transaction + restriction period
-  const nextEligibleDate = addDays(lastTransactionAt, restrictionDays);
-  nextEligibleDate.setHours(8, 0, 0, 0); // normalize to start of day
+  scheduledDate.setHours(8, 0, 0, 0);
 
-  // Pick a time slot based on a simple hash of vehicleId
   const slotIndex = vehicleId.charCodeAt(vehicleId.length - 1) % TIME_SLOTS.length;
   const timeSlot = TIME_SLOTS[slotIndex];
 
-  // Cancel any existing uncompleted schedule for this vehicle
   await prisma.fuelSchedule.updateMany({
     where: { vehicleId, isCompleted: false, isCancelled: false },
     data: { isCancelled: true },
   });
 
-  // Create the new schedule at the same pump that dispensed
   await prisma.fuelSchedule.create({
     data: {
       vehicleId,
       pumpName: operatorPumpName,
       pumpDistrict: operatorPumpDistrict,
-      scheduledDate: nextEligibleDate,
+      scheduledDate,
       timeSlot,
     },
   });

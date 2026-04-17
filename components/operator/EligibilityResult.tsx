@@ -71,7 +71,7 @@ export function EligibilityResult({ result, liters, onLitersChange, onDispense, 
             <span>Owner</span><span className="text-foreground font-medium">{result.ownerName}</span>
             <span>Vehicle Type</span><span className="text-foreground font-medium">{VehicleTypeLabel[result.vehicleType as VehicleType]}</span>
             <span>License</span><span className="text-foreground font-medium">{result.licenseNumber}</span>
-            <span>Max Allowed</span><span className="text-green-700 dark:text-green-400 font-bold">{result.maxLiters} liters</span>
+            <span>Can Receive Now</span><span className="text-green-700 dark:text-green-400 font-bold">{result.maxLiters} liters</span>
           </div>
 
           <div className="space-y-1.5">

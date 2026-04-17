@@ -4,25 +4,37 @@ import { subDays, subHours } from "date-fns";
 
 const prisma = new PrismaClient();
 
+// ─── Owner account fullName — must match Vehicle.ownerName for the three
+//     vehicles visible on the owner dashboard.
+const OWNER_FULL_NAME = "Rahim Uddin";
+
 async function main() {
   console.log("🌱 Seeding database...");
 
   // ─── 1. BRTA reference vehicles ────────────────────────────────────────
   const brtaVehicles = [
-    { licenseNumber: "DHA-GA-11-1001", ownerNid: "NID-101", ownerName: "Rahim Uddin", vehicleType: "MOTORCYCLE", make: "Bajaj", model: "Pulsar 150", year: 2019 },
+    { licenseNumber: "DHA-GA-11-1001", ownerNid: "NID-101", ownerName: OWNER_FULL_NAME, vehicleType: "MOTORCYCLE", make: "Bajaj", model: "Pulsar 150", year: 2019 },
     { licenseNumber: "DHA-GA-11-1002", ownerNid: "NID-102", ownerName: "Karim Hossain", vehicleType: "MOTORCYCLE", make: "Hero", model: "Splendor Plus", year: 2020 },
     { licenseNumber: "CHA-GA-11-2001", ownerNid: "NID-103", ownerName: "Nadia Begum", vehicleType: "MOTORCYCLE", make: "Yamaha", model: "FZS V3", year: 2021 },
     { licenseNumber: "DHA-GA-11-3001", ownerNid: "NID-201", ownerName: "Jalal Ahmed", vehicleType: "CNG_AUTO_RICKSHAW", make: "Bajaj", model: "RE CNG", year: 2018 },
     { licenseNumber: "CHA-GA-11-3002", ownerNid: "NID-202", ownerName: "Faruk Miah", vehicleType: "CNG_AUTO_RICKSHAW", make: "TVS", model: "King CNG", year: 2017 },
-    { licenseNumber: "DHA-GA-11-4001", ownerNid: "NID-301", ownerName: "Dr. Shirin Akter", vehicleType: "CAR", make: "Toyota", model: "Corolla", year: 2020 },
+    { licenseNumber: "DHA-GA-11-4001", ownerNid: "NID-301", ownerName: OWNER_FULL_NAME, vehicleType: "CAR", make: "Toyota", model: "Corolla", year: 2020 },
     { licenseNumber: "DHA-GA-11-4002", ownerNid: "NID-302", ownerName: "Monir Chowdhury", vehicleType: "CAR", make: "Honda", model: "Civic", year: 2019 },
     { licenseNumber: "SYL-GA-11-4003", ownerNid: "NID-303", ownerName: "Roksana Islam", vehicleType: "CAR", make: "Suzuki", model: "Swift", year: 2022 },
-    { licenseNumber: "DHA-GA-11-5001", ownerNid: "NID-401", ownerName: "Hasan Mahmud", vehicleType: "MICROBUS", make: "Toyota", model: "HiAce", year: 2017 },
+    { licenseNumber: "DHA-GA-11-4004", ownerNid: "NID-304", ownerName: "Tanvir Rahman", vehicleType: "CAR", make: "Hyundai", model: "Tucson", year: 2021 },
+    { licenseNumber: "DHA-GA-11-5001", ownerNid: "NID-401", ownerName: OWNER_FULL_NAME, vehicleType: "MICROBUS", make: "Toyota", model: "HiAce", year: 2017 },
     { licenseNumber: "DHA-GA-11-5002", ownerNid: "NID-402", ownerName: "Mina Transport", vehicleType: "MICROBUS", make: "Mitsubishi", model: "L300", year: 2016 },
     { licenseNumber: "DHA-GA-11-6001", ownerNid: "NID-501", ownerName: "Selim Transport Ltd", vehicleType: "TRUCK", make: "Tata", model: "407", year: 2016 },
     { licenseNumber: "CHA-GA-11-6002", ownerNid: "NID-502", ownerName: "Alam Brothers Logistics", vehicleType: "TRUCK", make: "Ashok Leyland", model: "Dost", year: 2018 },
+    { licenseNumber: "DHA-GA-11-6003", ownerNid: "NID-503", ownerName: "Rapid Cargo Ltd", vehicleType: "TRUCK", make: "Eicher", model: "Pro 1049", year: 2020 },
     { licenseNumber: "DHA-GA-11-7001", ownerNid: "NID-601", ownerName: "Green Line Paribahan", vehicleType: "BUS", make: "Hino", model: "AK1JRKA", year: 2019 },
     { licenseNumber: "SYL-GA-11-7002", ownerNid: "NID-602", ownerName: "Ena Transport", vehicleType: "BUS", make: "Tata", model: "LPO 1512", year: 2020 },
+    { licenseNumber: "DHA-GA-11-1003", ownerNid: "NID-104", ownerName: "Salma Akter", vehicleType: "MOTORCYCLE", make: "Suzuki", model: "Gixxer", year: 2022 },
+    { licenseNumber: "DHA-GA-11-4005", ownerNid: "NID-305", ownerName: "Shahidul Khan", vehicleType: "CAR", make: "Nissan", model: "Sunny", year: 2020 },
+    { licenseNumber: "DHA-GA-11-6004", ownerNid: "NID-504", ownerName: "Anwar Logistics", vehicleType: "TRUCK", make: "Isuzu", model: "NPR", year: 2019 },
+    { licenseNumber: "CHA-GA-11-1004", ownerNid: "NID-105", ownerName: "Rubel Ahmed", vehicleType: "MOTORCYCLE", make: "Honda", model: "CB Hornet", year: 2021 },
+    { licenseNumber: "DHA-GA-11-3003", ownerNid: "NID-203", ownerName: "Habib Miah", vehicleType: "CNG_AUTO_RICKSHAW", make: "Bajaj", model: "RE CNG", year: 2019 },
+    { licenseNumber: "SYL-GA-11-5003", ownerNid: "NID-403", ownerName: "Dhaka Express", vehicleType: "MICROBUS", make: "Nissan", model: "Urvan", year: 2018 },
   ];
 
   for (const v of brtaVehicles) {
@@ -62,7 +74,7 @@ async function main() {
   // ─── 4. Users ────────────────────────────────────────────────────────────
   const saltRounds = 12;
 
-  const adminUser = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "admin@fuel.bd" },
     update: {},
     create: {
@@ -74,13 +86,13 @@ async function main() {
     },
   });
 
-  const ownerUser = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "owner@fuel.bd" },
-    update: {},
+    update: { fullName: OWNER_FULL_NAME },
     create: {
       email: "owner@fuel.bd",
       passwordHash: await bcrypt.hash("Owner@1234", saltRounds),
-      fullName: "Rahim Uddin",
+      fullName: OWNER_FULL_NAME,
       phone: "01700000002",
       role: "VEHICLE_OWNER",
     },
@@ -98,7 +110,6 @@ async function main() {
     },
   });
 
-  // Operator profile linked to Padma Filling Station
   await prisma.operatorProfile.upsert({
     where: { userId: operatorUser.id },
     update: {},
@@ -114,14 +125,36 @@ async function main() {
 
   console.log("  ✓ 3 users (admin, owner, operator)");
 
-  // ─── 5. Vehicles (pre-seeded, linked to owner account conceptually) ─────
+  // ─── 5. Vehicles ─────────────────────────────────────────────────────────
+  // Three vehicles are owned by the demo owner (matched via ownerName).
+  // The rest exist so operators can dispense to them and admins see varied
+  // activity, but they won't appear on the owner dashboard.
   const vehicleData = [
-    { licenseNumber: "DHA-GA-11-1001", vehicleType: "MOTORCYCLE", make: "Bajaj", model: "Pulsar 150", year: 2019, ownerName: "Rahim Uddin" },
-    { licenseNumber: "DHA-GA-11-4001", vehicleType: "CAR", make: "Toyota", model: "Corolla", year: 2020, ownerName: "Dr. Shirin Akter" },
+    // Owner's vehicles (shown on owner dashboard)
+    { licenseNumber: "DHA-GA-11-1001", vehicleType: "MOTORCYCLE", make: "Bajaj", model: "Pulsar 150", year: 2019, ownerName: OWNER_FULL_NAME },
+    { licenseNumber: "DHA-GA-11-4001", vehicleType: "CAR", make: "Toyota", model: "Corolla", year: 2020, ownerName: OWNER_FULL_NAME },
+    { licenseNumber: "DHA-GA-11-5001", vehicleType: "MICROBUS", make: "Toyota", model: "HiAce", year: 2017, ownerName: OWNER_FULL_NAME },
+
+    // Other vehicles (for operator/admin views)
+    { licenseNumber: "DHA-GA-11-1002", vehicleType: "MOTORCYCLE", make: "Hero", model: "Splendor Plus", year: 2020, ownerName: "Karim Hossain" },
+    { licenseNumber: "CHA-GA-11-2001", vehicleType: "MOTORCYCLE", make: "Yamaha", model: "FZS V3", year: 2021, ownerName: "Nadia Begum" },
     { licenseNumber: "DHA-GA-11-3001", vehicleType: "CNG_AUTO_RICKSHAW", make: "Bajaj", model: "RE CNG", year: 2018, ownerName: "Jalal Ahmed" },
-    { licenseNumber: "DHA-GA-11-5001", vehicleType: "MICROBUS", make: "Toyota", model: "HiAce", year: 2017, ownerName: "Hasan Mahmud" },
+    { licenseNumber: "CHA-GA-11-3002", vehicleType: "CNG_AUTO_RICKSHAW", make: "TVS", model: "King CNG", year: 2017, ownerName: "Faruk Miah" },
+    { licenseNumber: "DHA-GA-11-4002", vehicleType: "CAR", make: "Honda", model: "Civic", year: 2019, ownerName: "Monir Chowdhury" },
+    { licenseNumber: "SYL-GA-11-4003", vehicleType: "CAR", make: "Suzuki", model: "Swift", year: 2022, ownerName: "Roksana Islam" },
+    { licenseNumber: "DHA-GA-11-4004", vehicleType: "CAR", make: "Hyundai", model: "Tucson", year: 2021, ownerName: "Tanvir Rahman" },
+    { licenseNumber: "DHA-GA-11-5002", vehicleType: "MICROBUS", make: "Mitsubishi", model: "L300", year: 2016, ownerName: "Mina Transport" },
     { licenseNumber: "DHA-GA-11-6001", vehicleType: "TRUCK", make: "Tata", model: "407", year: 2016, ownerName: "Selim Transport Ltd" },
+    { licenseNumber: "CHA-GA-11-6002", vehicleType: "TRUCK", make: "Ashok Leyland", model: "Dost", year: 2018, ownerName: "Alam Brothers Logistics" },
+    { licenseNumber: "DHA-GA-11-6003", vehicleType: "TRUCK", make: "Eicher", model: "Pro 1049", year: 2020, ownerName: "Rapid Cargo Ltd" },
     { licenseNumber: "DHA-GA-11-7001", vehicleType: "BUS", make: "Hino", model: "AK1JRKA", year: 2019, ownerName: "Green Line Paribahan" },
+    { licenseNumber: "SYL-GA-11-7002", vehicleType: "BUS", make: "Tata", model: "LPO 1512", year: 2020, ownerName: "Ena Transport" },
+    { licenseNumber: "DHA-GA-11-1003", vehicleType: "MOTORCYCLE", make: "Suzuki", model: "Gixxer", year: 2022, ownerName: "Salma Akter" },
+    { licenseNumber: "DHA-GA-11-4005", vehicleType: "CAR", make: "Nissan", model: "Sunny", year: 2020, ownerName: "Shahidul Khan" },
+    { licenseNumber: "DHA-GA-11-6004", vehicleType: "TRUCK", make: "Isuzu", model: "NPR", year: 2019, ownerName: "Anwar Logistics" },
+    { licenseNumber: "CHA-GA-11-1004", vehicleType: "MOTORCYCLE", make: "Honda", model: "CB Hornet", year: 2021, ownerName: "Rubel Ahmed" },
+    { licenseNumber: "DHA-GA-11-3003", vehicleType: "CNG_AUTO_RICKSHAW", make: "Bajaj", model: "RE CNG", year: 2019, ownerName: "Habib Miah" },
+    { licenseNumber: "SYL-GA-11-5003", vehicleType: "MICROBUS", make: "Nissan", model: "Urvan", year: 2018, ownerName: "Dhaka Express" },
   ];
 
   const vehicles: { id: string; licenseNumber: string; vehicleType: string }[] = [];
@@ -135,48 +168,68 @@ async function main() {
   }
   console.log(`  ✓ ${vehicles.length} vehicles`);
 
-  // Helper to find vehicle by license
   const vByLicense = (license: string) => vehicles.find((v) => v.licenseNumber === license)!;
 
   // ─── 6. Historical transactions ─────────────────────────────────────────
-  // Motorcycle: fuelled 1 day ago → IN RESTRICTION (3-day window)
-  // Car: fuelled 5 days ago → ELIGIBLE (3-day restriction passed)
-  // CNG: fuelled 3 days ago → just became eligible
-  // Microbus: fuelled 10 days ago → ELIGIBLE
-  // Truck: no recent transaction → ELIGIBLE
-  // Bus: fuelled 1 day ago → IN RESTRICTION (2-day window)
-
-  const transactionSeed = [
-    // Motorcycle — restricted (fuelled 1 day ago)
-    { vehicle: "DHA-GA-11-1001", litersRequested: 4, litersDispensed: 4, status: "APPROVED", daysAgo: 1 },
-    { vehicle: "DHA-GA-11-1001", litersRequested: 4, litersDispensed: 4, status: "APPROVED", daysAgo: 5 },
-    { vehicle: "DHA-GA-11-1001", litersRequested: 4, litersDispensed: 4, status: "APPROVED", daysAgo: 9 },
-
-    // Car — eligible (last fill 5 days ago)
-    { vehicle: "DHA-GA-11-4001", litersRequested: 10, litersDispensed: 10, status: "APPROVED", daysAgo: 5 },
-    { vehicle: "DHA-GA-11-4001", litersRequested: 12, litersDispensed: 10, status: "PARTIAL", daysAgo: 9 },
-    { vehicle: "DHA-GA-11-4001", litersRequested: 10, litersDispensed: 10, status: "APPROVED", daysAgo: 13 },
-
-    // CNG — just became eligible (last fill 2 days ago, restriction is 2 days)
-    { vehicle: "DHA-GA-11-3001", litersRequested: 3, litersDispensed: 3, status: "APPROVED", daysAgo: 2 },
-    { vehicle: "DHA-GA-11-3001", litersRequested: 3, litersDispensed: 3, status: "APPROVED", daysAgo: 5 },
-
-    // Microbus — eligible (last fill 10 days ago)
-    { vehicle: "DHA-GA-11-5001", litersRequested: 15, litersDispensed: 15, status: "APPROVED", daysAgo: 10 },
-    { vehicle: "DHA-GA-11-5001", litersRequested: 15, litersDispensed: 15, status: "APPROVED", daysAgo: 14 },
-
-    // Truck — eligible (no recent, last fill 8 days ago)
-    { vehicle: "DHA-GA-11-6001", litersRequested: 20, litersDispensed: 20, status: "APPROVED", daysAgo: 8 },
-    { vehicle: "DHA-GA-11-6001", litersRequested: 20, litersDispensed: 20, status: "APPROVED", daysAgo: 12 },
-
-    // Bus — restricted (fuelled 1 day ago, 2-day restriction)
-    { vehicle: "DHA-GA-11-7001", litersRequested: 30, litersDispensed: 30, status: "APPROVED", daysAgo: 1 },
-    { vehicle: "DHA-GA-11-7001", litersRequested: 30, litersDispensed: 30, status: "APPROVED", daysAgo: 4 },
-  ];
-
-  // Clear existing transactions and schedules before re-seeding to stay idempotent
+  // Wipe old transactions + schedules first so eligibility states are predictable.
   await prisma.fuelSchedule.deleteMany({});
   await prisma.fuelTransaction.deleteMany({});
+
+  // Day-one eligibility states (motorcycle=4L/3d, CNG=3L/2d, car=10L/3d,
+  // microbus=15L/3d, truck=20L/2d, bus=30L/2d):
+  //
+  //   BLOCKED (full-cap fill within the restriction window):
+  //     DHA-GA-11-1001 — motorcycle, 1 day ago
+  //     DHA-GA-11-5001 — microbus, 1 day ago
+  //     DHA-GA-11-7001 — bus, 1 day ago
+  //     CHA-GA-11-3002 — CNG, 1 day ago
+  //     DHA-GA-11-4002 — car, 1 day ago
+  //     DHA-GA-11-1003 — motorcycle, 1 day ago
+  //     DHA-GA-11-4005 — car, 2 days ago
+  //     DHA-GA-11-6004 — truck, 1 day ago
+  //
+  //   ELIGIBLE (no recent fill or fill outside the window):
+  //     DHA-GA-11-4001 — car, last fill 5 days ago
+  //     DHA-GA-11-1002 — motorcycle, last fill 4 days ago
+  //     CHA-GA-11-2001 — motorcycle, no history
+  //     DHA-GA-11-3001 — CNG, last fill 3 days ago
+  //     SYL-GA-11-4003 — car, no history
+  //     DHA-GA-11-4004 — car, last fill 6 days ago
+  //     DHA-GA-11-5002 — microbus, no history
+  //     DHA-GA-11-6001 — truck, last fill 3 days ago
+  //     CHA-GA-11-6002 — truck, no history
+  //     DHA-GA-11-6003 — truck, last fill 4 days ago
+  //     SYL-GA-11-7002 — bus, last fill 3 days ago
+  //     CHA-GA-11-1004 — motorcycle, no history
+  //     DHA-GA-11-3003 — CNG, last fill 3 days ago
+  //     SYL-GA-11-5003 — microbus, last fill 5 days ago
+
+  const transactionSeed = [
+    // Owner's vehicles
+    { vehicle: "DHA-GA-11-1001", litersRequested: 4, litersDispensed: 4, status: "APPROVED", daysAgo: 1 },
+    { vehicle: "DHA-GA-11-4001", litersRequested: 10, litersDispensed: 10, status: "APPROVED", daysAgo: 5 },
+    { vehicle: "DHA-GA-11-5001", litersRequested: 15, litersDispensed: 15, status: "APPROVED", daysAgo: 1 },
+
+    // Blocked (full-cap fill within restriction window)
+    { vehicle: "DHA-GA-11-7001", litersRequested: 30, litersDispensed: 30, status: "APPROVED", daysAgo: 1 },
+    { vehicle: "CHA-GA-11-3002", litersRequested: 3, litersDispensed: 3, status: "APPROVED", daysAgo: 1 },
+    { vehicle: "DHA-GA-11-4002", litersRequested: 10, litersDispensed: 10, status: "APPROVED", daysAgo: 1 },
+
+    // Additional blocked
+    { vehicle: "DHA-GA-11-1003", litersRequested: 4, litersDispensed: 4, status: "APPROVED", daysAgo: 1 },
+    { vehicle: "DHA-GA-11-4005", litersRequested: 10, litersDispensed: 10, status: "APPROVED", daysAgo: 2 },
+    { vehicle: "DHA-GA-11-6004", litersRequested: 20, litersDispensed: 20, status: "APPROVED", daysAgo: 1 },
+
+    // Eligible — last fill clearly outside the restriction window
+    { vehicle: "DHA-GA-11-1002", litersRequested: 4, litersDispensed: 4, status: "APPROVED", daysAgo: 4 },
+    { vehicle: "DHA-GA-11-3001", litersRequested: 3, litersDispensed: 3, status: "APPROVED", daysAgo: 3 },
+    { vehicle: "DHA-GA-11-4004", litersRequested: 10, litersDispensed: 10, status: "APPROVED", daysAgo: 6 },
+    { vehicle: "DHA-GA-11-6001", litersRequested: 20, litersDispensed: 20, status: "APPROVED", daysAgo: 3 },
+    { vehicle: "DHA-GA-11-6003", litersRequested: 20, litersDispensed: 20, status: "APPROVED", daysAgo: 4 },
+    { vehicle: "SYL-GA-11-7002", litersRequested: 30, litersDispensed: 30, status: "APPROVED", daysAgo: 3 },
+    { vehicle: "DHA-GA-11-3003", litersRequested: 3, litersDispensed: 3, status: "APPROVED", daysAgo: 3 },
+    { vehicle: "SYL-GA-11-5003", litersRequested: 15, litersDispensed: 15, status: "APPROVED", daysAgo: 5 },
+  ];
 
   for (const t of transactionSeed) {
     const vehicle = vByLicense(t.vehicle);
@@ -195,17 +248,18 @@ async function main() {
   }
   console.log(`  ✓ ${transactionSeed.length} historical transactions`);
 
-  // ─── 7. Upcoming schedules ───────────────────────────────────────────────
-  // Create schedules for vehicles currently in restriction period
+  // ─── 7. Upcoming schedules for currently-blocked vehicles ────────────────
   const timeSlots = ["08:00-09:00", "09:00-10:00", "10:00-11:00", "11:00-12:00", "14:00-15:00", "15:00-16:00"];
 
   const scheduleSeed = [
-    // Motorcycle restricted 1 day ago, 3-day rule → eligible in 2 more days
     { vehicle: "DHA-GA-11-1001", daysUntilEligible: 2, slotIndex: 0, pump: "Padma Filling Station", district: "Dhaka" },
-    // Bus restricted 1 day ago, 2-day rule → eligible tomorrow
+    { vehicle: "DHA-GA-11-5001", daysUntilEligible: 2, slotIndex: 1, pump: "Padma Filling Station", district: "Dhaka" },
     { vehicle: "DHA-GA-11-7001", daysUntilEligible: 1, slotIndex: 2, pump: "Padma Filling Station", district: "Dhaka" },
-    // Car — eligible, schedule a future one
-    { vehicle: "DHA-GA-11-4001", daysUntilEligible: 0, slotIndex: 4, pump: "Meghna Fuel Center", district: "Gazipur" },
+    { vehicle: "CHA-GA-11-3002", daysUntilEligible: 1, slotIndex: 3, pump: "Meghna Fuel Center", district: "Gazipur" },
+    { vehicle: "DHA-GA-11-4002", daysUntilEligible: 2, slotIndex: 4, pump: "Padma Filling Station", district: "Dhaka" },
+    { vehicle: "DHA-GA-11-1003", daysUntilEligible: 2, slotIndex: 5, pump: "Padma Filling Station", district: "Dhaka" },
+    { vehicle: "DHA-GA-11-4005", daysUntilEligible: 1, slotIndex: 0, pump: "Padma Filling Station", district: "Dhaka" },
+    { vehicle: "DHA-GA-11-6004", daysUntilEligible: 1, slotIndex: 1, pump: "Meghna Fuel Center", district: "Gazipur" },
   ];
 
   for (const s of scheduleSeed) {
@@ -229,6 +283,12 @@ async function main() {
   console.log("  Admin:    admin@fuel.bd      / Admin@1234");
   console.log("  Owner:    owner@fuel.bd      / Owner@1234");
   console.log("  Operator: operator@fuel.bd   / Operator@1234");
+  console.log("\nDay-one states:");
+  console.log("  BLOCKED (8): DHA-GA-11-1001, DHA-GA-11-5001, DHA-GA-11-7001, CHA-GA-11-3002, DHA-GA-11-4002,");
+  console.log("               DHA-GA-11-1003, DHA-GA-11-4005, DHA-GA-11-6004");
+  console.log("  ELIGIBLE (14): DHA-GA-11-4001, DHA-GA-11-1002, CHA-GA-11-2001, DHA-GA-11-3001, SYL-GA-11-4003,");
+  console.log("                 DHA-GA-11-4004, DHA-GA-11-5002, DHA-GA-11-6001, CHA-GA-11-6002, DHA-GA-11-6003,");
+  console.log("                 SYL-GA-11-7002, CHA-GA-11-1004, DHA-GA-11-3003, SYL-GA-11-5003");
 }
 
 main()

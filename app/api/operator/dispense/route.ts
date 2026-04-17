@@ -24,7 +24,6 @@ export async function POST(req: Request) {
 
   const { licenseNumber, litersDispensed } = parsed.data;
 
-  // Fetch operator's pump info for recording and scheduling
   const operatorProfile = await prisma.operatorProfile.findUnique({
     where: { userId: session.user.id },
   });
@@ -32,41 +31,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Operator profile not found" }, { status: 400 });
   }
 
-  // Re-check eligibility and get vehicle in one call
   const eligibility = await checkEligibility(licenseNumber);
 
   if (eligibility.eligible === false && eligibility.reason === "VEHICLE_NOT_REGISTERED") {
     return NextResponse.json({ error: "Vehicle is not registered in the system" }, { status: 404 });
   }
 
-  // Look up vehicle id
   const vehicle = await prisma.vehicle.findUnique({
     where: { licenseNumber: licenseNumber.trim().toUpperCase() },
   });
   if (!vehicle) return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
 
-  // Get the rule to know max allowed liters
-  const rule = await prisma.distributionRule.findUnique({
-    where: { vehicleType: vehicle.vehicleType },
-  });
-  const maxAllowed = rule?.maxLitersPerCycle ?? litersDispensed;
+  // Remaining quota available in the current cycle (0 if blocked).
+  const remaining = eligibility.eligible ? eligibility.maxLiters : 0;
 
   let finalLiters = litersDispensed;
   let status: "APPROVED" | "PARTIAL" | "BLOCKED";
 
   if (!eligibility.eligible) {
-    // Record a BLOCKED transaction (the operator confirmed despite restriction — edge case)
     status = "BLOCKED";
     finalLiters = 0;
-  } else if (litersDispensed > maxAllowed) {
-    // Requested more than quota — dispense only the max
-    status = "PARTIAL";
-    finalLiters = maxAllowed;
-  } else {
+  } else if (litersDispensed >= remaining) {
+    // Requested at or above the remaining quota — cap it and close the cycle.
     status = "APPROVED";
+    finalLiters = remaining;
+  } else {
+    // Partial fill: quota remains in the current cycle.
+    status = "PARTIAL";
+    finalLiters = litersDispensed;
   }
 
-  // Write the transaction and create the next schedule atomically
   const transaction = await prisma.$transaction(async (tx) => {
     const txRecord = await tx.fuelTransaction.create({
       data: {
@@ -80,7 +74,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Mark current schedule as completed if this was scheduled
     await tx.fuelSchedule.updateMany({
       where: { vehicleId: vehicle.id, isCompleted: false, isCancelled: false },
       data: { isCompleted: true },
@@ -89,14 +82,12 @@ export async function POST(req: Request) {
     return txRecord;
   });
 
-  // Assign next schedule (outside the transaction — non-critical, can fail gracefully)
   if (status !== "BLOCKED") {
     await assignNextSchedule(
       vehicle.id,
-      transaction.transactedAt,
       operatorProfile.pumpName,
       operatorProfile.district,
-      vehicle.vehicleType
+      vehicle.licenseNumber
     );
   }
 

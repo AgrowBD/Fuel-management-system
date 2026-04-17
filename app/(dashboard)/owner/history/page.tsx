@@ -29,8 +29,11 @@ export default async function OwnerHistoryPage({
   const limit = 15;
   const skip = (page - 1) * limit;
 
-  // Get all vehicle ids first
-  const vehicles = await prisma.vehicle.findMany({ select: { id: true } });
+  // Limit to vehicles owned by the logged-in user (match by ownerName string).
+  const vehicles = await prisma.vehicle.findMany({
+    where: { ownerName: session.user.name },
+    select: { id: true },
+  });
   const vehicleIds = vehicles.map((v) => v.id);
 
   const [transactions, total] = await Promise.all([

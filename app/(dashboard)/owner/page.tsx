@@ -18,7 +18,7 @@ export default async function OwnerOverviewPage() {
   if (!session || session.user.role !== "VEHICLE_OWNER") redirect("/login");
 
   const vehicles = await prisma.vehicle.findMany({
-    where: { isActive: true },
+    where: { isActive: true, ownerName: session.user.name },
     orderBy: { registeredAt: "asc" },
   });
 

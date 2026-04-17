@@ -14,7 +14,10 @@ export default async function OwnerSchedulePage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "VEHICLE_OWNER") redirect("/login");
 
-  const vehicles = await prisma.vehicle.findMany({ select: { id: true } });
+  const vehicles = await prisma.vehicle.findMany({
+    where: { ownerName: session.user.name },
+    select: { id: true },
+  });
   const vehicleIds = vehicles.map((v) => v.id);
 
   const schedules = await prisma.fuelSchedule.findMany({
