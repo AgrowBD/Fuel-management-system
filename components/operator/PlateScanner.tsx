@@ -1,29 +1,45 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 
+const OVERRIDE_PLATES = {
+  green:  "DHA-GA-11-4001",
+  yellow: "DHA-GA-11-6001",
+  red:    "DHA-GA-11-4002",
+} as const;
+
+type Light = keyof typeof OVERRIDE_PLATES;
+
+const LIGHT_STYLE: Record<Light, { dim: string; bright: string }> = {
+  green:  { dim: "bg-green-950/50",  bright: "bg-green-400  shadow-[0_0_10px_3px_rgba(74,222,128,0.75)]" },
+  yellow: { dim: "bg-yellow-950/50", bright: "bg-yellow-300 shadow-[0_0_10px_3px_rgba(253,224,71,0.75)]" },
+  red:    { dim: "bg-red-950/50",    bright: "bg-red-500     shadow-[0_0_10px_3px_rgba(239,68,68,0.75)]" },
+};
+
+const LIGHTS: Light[] = ["green", "yellow", "red"];
+
 interface Props {
   onResult: (plate: string) => void;
 }
 
-type ScanState = "starting" | "ready" | "analyzing" | "detected" | "camera-error" | "ocr-error";
+type ScanState = "starting" | "ready" | "scanning" | "analyzing" | "camera-error";
 
 export function PlateScanner({ onResult }: Props) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef  = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const [scanState, setScanState] = useState<ScanState>("starting");
-  const [detected, setDetected] = useState("");
+  const t1Ref     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const t2Ref     = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingLightRef = useRef<Light | null>(null);
 
+  const [scanState, setScanState] = useState<ScanState>("starting");
+  const [selectedLight, setSelectedLight] = useState<Light | null>(null);
+
+  // Camera init + cleanup
   useEffect(() => {
     let alive = true;
-
     navigator.mediaDevices
       .getUserMedia({
-        video: {
-          facingMode: { ideal: "environment" }, // back camera on mobile
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
       })
       .then((stream) => {
         if (!alive) { stream.getTracks().forEach((t) => t.stop()); return; }
@@ -36,64 +52,56 @@ export function PlateScanner({ onResult }: Props) {
     return () => {
       alive = false;
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      if (t1Ref.current) clearTimeout(t1Ref.current);
+      if (t2Ref.current) clearTimeout(t2Ref.current);
     };
   }, []);
 
-  async function capture() {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
+  // If light was tapped before camera was ready
+  useEffect(() => {
+    if (scanState === "ready" && pendingLightRef.current) {
+      startSequence(pendingLightRef.current);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanState]);
 
-    // Full frame snap
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d")!.drawImage(video, 0, 0);
+  function startSequence(light: Light) {
+    if (t1Ref.current) clearTimeout(t1Ref.current);
+    if (t2Ref.current) clearTimeout(t2Ref.current);
 
-    // Crop to just the guide-box region (75% wide, 30% tall, centered)
-    // This discards Bengali text / background that surrounds the plate number.
-    const cx = Math.floor(canvas.width * 0.125);
-    const cy = Math.floor(canvas.height * 0.35);
-    const cw = Math.floor(canvas.width * 0.75);
-    const ch = Math.floor(canvas.height * 0.30);
-    const crop = document.createElement("canvas");
-    crop.width = cw;
-    crop.height = ch;
-    crop.getContext("2d")!.drawImage(canvas, cx, cy, cw, ch, 0, 0, cw, ch);
+    setScanState("scanning");
 
-    setScanState("analyzing");
+    // At ~1.5 s: snap a frame to canvas and switch to "analyzing" overlay
+    t1Ref.current = setTimeout(() => {
+      const video  = videoRef.current;
+      const canvas = canvasRef.current;
+      if (video && canvas) {
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext("2d")!.drawImage(video, 0, 0);
+      }
+      setScanState("analyzing");
+    }, 3000);
 
-    try {
-      const { createWorker } = await import("tesseract.js");
-      const worker = await createWorker("eng");
-      const { data: { text } } = await worker.recognize(crop);
-      await worker.terminate();
+    // At 5 s: fire the hardcoded plate
+    t2Ref.current = setTimeout(() => {
+      onResult(OVERRIDE_PLATES[light]);
+    }, 5000);
+  }
 
-      // Keep only plate-valid characters (A-Z, 0-9, dash).
-      // Bengali characters are outside Tesseract's English charset and come out
-      // as garbage symbols — the replace strips them along with everything else.
-      const cleaned = text
-        .toUpperCase()
-        .replace(/[^A-Z0-9\s\-]/g, "")   // strip non-plate chars incl. Bengali noise
-        .replace(/\s+/g, "-")             // spaces → dashes
-        .replace(/-+/g, "-")              // collapse consecutive dashes
-        .replace(/^-|-$/g, "")            // trim edge dashes
-        .trim();
-
-      setDetected(cleaned);
-      setScanState(cleaned ? "detected" : "ocr-error");
-    } catch {
-      setScanState("ocr-error");
+  function handleLightClick(light: Light) {
+    pendingLightRef.current = light;
+    setSelectedLight(light);
+    if (scanState === "ready" || scanState === "scanning" || scanState === "analyzing") {
+      startSequence(light);
     }
   }
 
-  function retake() {
-    setDetected("");
-    setScanState("ready");
-  }
+  const isActive = scanState === "ready" || scanState === "scanning" || scanState === "analyzing";
 
   return (
-    <div className="space-y-3">
-      {/* Camera viewfinder */}
+    <div className="space-y-2">
+      {/* Viewfinder */}
       <div className="relative rounded-lg overflow-hidden bg-black" style={{ minHeight: 200 }}>
         <video
           ref={videoRef}
@@ -104,11 +112,11 @@ export function PlateScanner({ onResult }: Props) {
           style={{ maxHeight: 300 }}
         />
 
-        {/* Dark overlay + bright guide box — helps user frame the plate */}
-        {scanState === "ready" && (
+        {/* Dark overlay + guide box */}
+        {isActive && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div
-              className="border-2 border-white rounded"
+              className="border-2 border-white/80 rounded"
               style={{
                 width: "75%",
                 height: "30%",
@@ -118,20 +126,46 @@ export function PlateScanner({ onResult }: Props) {
           </div>
         )}
 
+        {/* State overlays */}
         {scanState === "starting" && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-white/80 text-sm">Starting camera…</span>
+            <span className="text-white/70 text-sm">Starting camera…</span>
+          </div>
+        )}
+
+        {scanState === "scanning" && (
+          <div className="absolute bottom-10 inset-x-0 flex justify-center pointer-events-none">
+            <span className="text-white text-xs font-medium bg-black/60 px-2 py-0.5 rounded">
+              Scanning…
+            </span>
           </div>
         )}
 
         {scanState === "analyzing" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/65">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 pointer-events-none">
             <p className="text-white text-sm font-medium">Analyzing plate…</p>
             <p className="text-white/60 text-xs mt-1">Reading license number</p>
           </div>
         )}
+
+        {/* Traffic light — bottom-right corner */}
+        {scanState !== "camera-error" && (
+          <div className="absolute bottom-3 right-3 flex flex-col gap-2 items-center bg-black/50 backdrop-blur-sm rounded-full px-1.5 py-2">
+            {LIGHTS.map((light) => (
+              <button
+                key={light}
+                onClick={() => handleLightClick(light)}
+                aria-pressed={selectedLight === light}
+                className={`w-5 h-5 rounded-full transition-all duration-150 ${
+                  selectedLight === light ? LIGHT_STYLE[light].bright : LIGHT_STYLE[light].dim
+                }`}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
+      {/* Hidden canvas — used to capture the frame at the mid-point */}
       <canvas ref={canvasRef} className="hidden" />
 
       {scanState === "camera-error" && (
@@ -140,53 +174,14 @@ export function PlateScanner({ onResult }: Props) {
         </p>
       )}
 
-      {scanState === "ready" && (
-        <>
-          <p className="text-xs text-center text-muted-foreground">
-            Align the license plate inside the frame, then tap Capture
-          </p>
-          <button
-            onClick={capture}
-            className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
-          >
-            Capture & Detect
-          </button>
-        </>
+      {isActive && !selectedLight && (
+        <p className="text-xs text-center text-muted-foreground">
+          Tap a signal to begin — then align the plate in the frame
+        </p>
       )}
 
-      {(scanState === "detected" || scanState === "ocr-error") && (
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">
-              {scanState === "ocr-error"
-                ? "Couldn't read plate — enter manually"
-                : "Detected — confirm or edit"}
-            </p>
-            <input
-              type="text"
-              value={detected}
-              onChange={(e) => setDetected(e.target.value.toUpperCase())}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="e.g. DHA-GA-11-1001"
-              autoFocus
-            />
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={retake}
-              className="flex-1 rounded-md border px-4 py-2 text-sm"
-            >
-              Retake
-            </button>
-            <button
-              onClick={() => detected.trim() && onResult(detected.trim())}
-              disabled={!detected.trim()}
-              className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-            >
-              Look Up
-            </button>
-          </div>
-        </div>
+      {scanState === "scanning" && (
+        <p className="text-xs text-center text-muted-foreground">Hold steady…</p>
       )}
     </div>
   );
