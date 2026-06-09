@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── Reference Tables (dummy government databases, read-only) ─────────────
@@ -76,15 +77,17 @@ model OperatorProfile {
 }
 
 model Vehicle {
-  id            String   @id @default(cuid())
-  licenseNumber String   @unique
-  vehicleType   String   // VehicleType
-  make          String
-  model         String
-  year          Int
-  ownerName     String
-  isActive      Boolean  @default(true)
-  registeredAt  DateTime @default(now())
+  id             String   @id @default(cuid())
+  licenseNumber  String   @unique
+  vehicleType    String   // VehicleType
+  make           String
+  model          String
+  year           Int
+  ownerName      String
+  isGovernment   Boolean  @default(false)
+  fuelCardNumber String?  @unique
+  isActive       Boolean  @default(true)
+  registeredAt   DateTime @default(now())
 
   transactions FuelTransaction[]
   schedules    FuelSchedule[]
@@ -101,6 +104,17 @@ model DistributionRule {
   updatedAt         DateTime @updatedAt
 
   @@map("distribution_rules")
+}
+
+model GovernmentQuotaRule {
+  id                String   @id @default(cuid())
+  vehicleType       String   @unique // VehicleType
+  maxLitersPerCycle Float
+  restrictionDays   Int
+  description       String?
+  updatedAt         DateTime @updatedAt
+
+  @@map("government_quota_rules")
 }
 
 model FuelTransaction {

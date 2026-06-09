@@ -2,13 +2,16 @@ import { addDays, differenceInCalendarDays, isBefore } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import type { EligibilityResult, VehicleType } from "@/types";
 
-// Sliding-window quota with first-fill cycle anchor.
-//
-// A "cycle" is a contiguous chain of dispenses where each fill is within
-// `restrictionDays` calendar days of the next. The cycle's expiry is fixed
-// at `firstFillInCycle + restrictionDays`. Within an active cycle a vehicle
-// may top up to `maxLitersPerCycle` total; partial fills leave the remainder
-// claimable. Once the cycle expires, a fresh cycle starts.
+// Resolves the quota rule for a vehicle: GovernmentQuotaRule for govt, DistributionRule for civilian.
+async function getRule(vehicleType: string, isGovernment: boolean) {
+  if (isGovernment) {
+    return prisma.governmentQuotaRule.findUnique({ where: { vehicleType } });
+  }
+  return prisma.distributionRule.findUnique({ where: { vehicleType } });
+}
+
+// Sliding-window quota check. Works for both civilian and government vehicles.
+// Government vehicles use GovernmentQuotaRule; civilian use DistributionRule.
 export async function checkEligibility(licenseNumber: string): Promise<EligibilityResult> {
   const vehicle = await prisma.vehicle.findUnique({
     where: { licenseNumber: licenseNumber.trim().toUpperCase() },
@@ -18,9 +21,30 @@ export async function checkEligibility(licenseNumber: string): Promise<Eligibili
     return { eligible: false, reason: "VEHICLE_NOT_REGISTERED" };
   }
 
-  const rule = await prisma.distributionRule.findUnique({
-    where: { vehicleType: vehicle.vehicleType },
+  return checkEligibilityForVehicle(vehicle);
+}
+
+export async function checkEligibilityByCardNumber(cardNumber: string): Promise<EligibilityResult> {
+  const vehicle = await prisma.vehicle.findUnique({
+    where: { fuelCardNumber: cardNumber.trim().toUpperCase() },
   });
+
+  if (!vehicle || !vehicle.isActive) {
+    return { eligible: false, reason: "VEHICLE_NOT_REGISTERED" };
+  }
+
+  return checkEligibilityForVehicle(vehicle);
+}
+
+export async function checkEligibilityForVehicle(vehicle: {
+  id: string;
+  licenseNumber: string;
+  vehicleType: string;
+  ownerName: string;
+  isGovernment: boolean;
+  fuelCardNumber: string | null;
+}): Promise<EligibilityResult> {
+  const rule = await getRule(vehicle.vehicleType, vehicle.isGovernment);
 
   if (!rule) {
     return {
@@ -29,6 +53,8 @@ export async function checkEligibility(licenseNumber: string): Promise<Eligibili
       vehicleType: vehicle.vehicleType as VehicleType,
       ownerName: vehicle.ownerName,
       licenseNumber: vehicle.licenseNumber,
+      isGovernment: vehicle.isGovernment,
+      fuelCardNumber: vehicle.fuelCardNumber,
     };
   }
 
@@ -48,11 +74,11 @@ export async function checkEligibility(licenseNumber: string): Promise<Eligibili
       vehicleType: vehicle.vehicleType as VehicleType,
       ownerName: vehicle.ownerName,
       licenseNumber: vehicle.licenseNumber,
+      isGovernment: vehicle.isGovernment,
+      fuelCardNumber: vehicle.fuelCardNumber,
     };
   }
 
-  // Walk back from newest to find the contiguous chain forming the current cycle.
-  // Strict less-than: a gap of exactly restrictionDays is the boundary between cycles.
   const cycle = [recentTxs[0]];
   for (let i = 1; i < recentTxs.length; i++) {
     const gap = differenceInCalendarDays(recentTxs[i - 1].transactedAt, recentTxs[i].transactedAt);
@@ -64,7 +90,6 @@ export async function checkEligibility(licenseNumber: string): Promise<Eligibili
   const cycleExpiresAt = addDays(firstInCycle.transactedAt, rule.restrictionDays);
   const now = new Date();
 
-  // Cycle already expired → fresh cycle, full quota.
   if (!isBefore(now, cycleExpiresAt)) {
     return {
       eligible: true,
@@ -72,6 +97,8 @@ export async function checkEligibility(licenseNumber: string): Promise<Eligibili
       vehicleType: vehicle.vehicleType as VehicleType,
       ownerName: vehicle.ownerName,
       licenseNumber: vehicle.licenseNumber,
+      isGovernment: vehicle.isGovernment,
+      fuelCardNumber: vehicle.fuelCardNumber,
     };
   }
 
@@ -85,6 +112,8 @@ export async function checkEligibility(licenseNumber: string): Promise<Eligibili
       vehicleType: vehicle.vehicleType as VehicleType,
       ownerName: vehicle.ownerName,
       licenseNumber: vehicle.licenseNumber,
+      isGovernment: vehicle.isGovernment,
+      fuelCardNumber: vehicle.fuelCardNumber,
     };
   }
 
@@ -96,5 +125,7 @@ export async function checkEligibility(licenseNumber: string): Promise<Eligibili
     vehicleType: vehicle.vehicleType as VehicleType,
     ownerName: vehicle.ownerName,
     licenseNumber: vehicle.licenseNumber,
+    isGovernment: vehicle.isGovernment,
+    fuelCardNumber: vehicle.fuelCardNumber,
   };
 }

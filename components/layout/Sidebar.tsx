@@ -24,6 +24,8 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: "Transactions", href: "/admin/transactions" },
     { label: "Users", href: "/admin/users" },
     { label: "Distribution Rules", href: "/admin/rules" },
+    { label: "Govt Quota Rules", href: "/admin/govt-rules" },
+    { label: "Print Fuel Card", href: "/admin/fuel-card-print" },
     { label: "Reports", href: "/admin/reports" },
   ],
 };

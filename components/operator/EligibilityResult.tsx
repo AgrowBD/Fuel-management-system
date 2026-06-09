@@ -18,6 +18,10 @@ interface Props {
   dispensing: boolean;
 }
 
+function GovtBadge() {
+  return <Badge className="bg-blue-600 text-white text-xs">Government</Badge>;
+}
+
 export function EligibilityResult({ result, liters, onLitersChange, onDispense, dispensing }: Props) {
   if (result.eligible === false && result.reason === "VEHICLE_NOT_REGISTERED") {
     return (
@@ -27,7 +31,7 @@ export function EligibilityResult({ result, liters, onLitersChange, onDispense, 
         </CardHeader>
         <CardContent>
           <p className="text-sm text-orange-700 dark:text-orange-400">
-            This license number is not registered in the system.
+            This vehicle is not registered in the system.
           </p>
         </CardContent>
       </Card>
@@ -38,9 +42,12 @@ export function EligibilityResult({ result, liters, onLitersChange, onDispense, 
     return (
       <Card className="border-destructive/40 bg-destructive/5">
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-base text-destructive">Fuel Restricted</CardTitle>
-            <Badge variant="destructive">Blocked</Badge>
+            <div className="flex gap-1.5">
+              {result.isGovernment && <GovtBadge />}
+              <Badge variant="destructive">Blocked</Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
@@ -48,6 +55,9 @@ export function EligibilityResult({ result, liters, onLitersChange, onDispense, 
             <span>Owner</span><span className="text-foreground font-medium">{result.ownerName}</span>
             <span>Vehicle Type</span><span className="text-foreground font-medium">{VehicleTypeLabel[result.vehicleType as VehicleType]}</span>
             <span>License</span><span className="text-foreground font-medium">{result.licenseNumber}</span>
+            {result.fuelCardNumber && (
+              <><span>Fuel Card</span><span className="text-foreground font-medium">{result.fuelCardNumber}</span></>
+            )}
             <span>Last Fuelled</span><span className="text-foreground font-medium">{format(new Date(result.lastTransactionAt), "dd MMM yyyy, HH:mm")}</span>
             <span>Eligible From</span><span className="text-foreground font-medium">{format(new Date(result.restrictionEndsAt), "dd MMM yyyy, HH:mm")}</span>
             <span>Can Get Now</span><span className="text-destructive font-bold">0 liters</span>
@@ -61,9 +71,12 @@ export function EligibilityResult({ result, liters, onLitersChange, onDispense, 
     return (
       <Card className="border-green-400 bg-green-50 dark:bg-green-950/20">
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <CardTitle className="text-base text-green-700 dark:text-green-400">Eligible for Fuel</CardTitle>
-            <Badge className="bg-green-600 text-white">Approved</Badge>
+            <div className="flex gap-1.5">
+              {result.isGovernment && <GovtBadge />}
+              <Badge className="bg-green-600 text-white">Approved</Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -71,6 +84,9 @@ export function EligibilityResult({ result, liters, onLitersChange, onDispense, 
             <span>Owner</span><span className="text-foreground font-medium">{result.ownerName}</span>
             <span>Vehicle Type</span><span className="text-foreground font-medium">{VehicleTypeLabel[result.vehicleType as VehicleType]}</span>
             <span>License</span><span className="text-foreground font-medium">{result.licenseNumber}</span>
+            {result.fuelCardNumber && (
+              <><span>Fuel Card</span><span className="text-foreground font-medium">{result.fuelCardNumber}</span></>
+            )}
             <span>Can Receive Now</span><span className="text-green-700 dark:text-green-400 font-bold">{result.maxLiters} liters</span>
           </div>
 

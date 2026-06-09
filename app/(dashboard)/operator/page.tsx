@@ -10,7 +10,7 @@ export default function OperatorPage() {
         <div className="mb-6">
           <h2 className="text-lg font-semibold">Vehicle Eligibility Check</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Enter the vehicle license number to check eligibility and record a fuel dispense.
+            Look up a vehicle by license plate, fuel card number, or QR scan to check eligibility and record a dispense.
           </p>
         </div>
         <EligibilityChecker />

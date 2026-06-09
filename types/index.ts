@@ -1,5 +1,5 @@
 // Shared TypeScript constants and types.
-// Since SQLite doesn't support Prisma enums, these string literals are the source of truth.
+// Enum values are stored as plain strings in the DB; these constants are the source of truth.
 
 export const Role = {
   VEHICLE_OWNER: "VEHICLE_OWNER",
@@ -37,6 +37,6 @@ export const VehicleTypeLabel: Record<VehicleType, string> = {
 
 // Result shape from the eligibility check
 export type EligibilityResult =
-  | { eligible: true; maxLiters: number; vehicleType: VehicleType; ownerName: string; licenseNumber: string }
-  | { eligible: false; reason: "IN_RESTRICTION_PERIOD"; restrictionEndsAt: Date; lastTransactionAt: Date; vehicleType: VehicleType; ownerName: string; licenseNumber: string }
+  | { eligible: true; maxLiters: number; vehicleType: VehicleType; ownerName: string; licenseNumber: string; isGovernment: boolean; fuelCardNumber: string | null }
+  | { eligible: false; reason: "IN_RESTRICTION_PERIOD"; restrictionEndsAt: Date; lastTransactionAt: Date; vehicleType: VehicleType; ownerName: string; licenseNumber: string; isGovernment: boolean; fuelCardNumber: string | null }
   | { eligible: false; reason: "VEHICLE_NOT_REGISTERED" };
