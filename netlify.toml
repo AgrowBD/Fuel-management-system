@@ -2,5 +2,11 @@
   command = "npm run build"
   publish = ".next"
 
+[functions]
+  timeout = 26
+
+[functions."___netlify-server-handler"]
+  timeout = 26
+
 [[plugins]]
   package = "@netlify/plugin-nextjs"

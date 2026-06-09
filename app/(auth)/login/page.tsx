@@ -2,7 +2,7 @@
 // Login page — credentials form for all three roles.
 // On success, NextAuth redirects to the role's dashboard via the callbackUrl.
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -23,6 +23,10 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+
+  // Silently wake the Neon compute the moment the login page loads,
+  // so the DB is warm before the user submits credentials.
+  useEffect(() => { fetch("/api/warmup").catch(() => {}); }, []);
 
   const {
     register,
