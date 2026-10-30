@@ -9,11 +9,11 @@ interface Props {
 
 export function MobileTopbar({ onMenuClick }: Props) {
   return (
-    <header className="flex md:hidden h-14 items-center border-b bg-card px-4 shrink-0">
+    <header className="flex h-14 shrink-0 items-center border-b border-sidebar-border bg-sidebar px-4 text-sidebar-foreground md:hidden">
       <Button variant="ghost" size="sm" onClick={onMenuClick} className="p-2">
         <Menu className="h-5 w-5" />
       </Button>
-      <span className="ml-3 text-sm font-bold">Fuel Distribution</span>
+      <span className="ml-3 text-sm font-bold tracking-tight">Fuel Distribution</span>
     </header>
   );
 }

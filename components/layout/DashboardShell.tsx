@@ -42,10 +42,10 @@ export function DashboardShell({ role, userName, children }: Props) {
       )}
 
       {/* ── Main content ── */}
-      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Mobile topbar with hamburger — hidden on desktop */}
         <MobileTopbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="page-enter flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>
   );

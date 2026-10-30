@@ -10,8 +10,8 @@ interface TopbarProps {
 
 export function Topbar({ title }: TopbarProps) {
   return (
-    <header className="flex h-14 md:h-16 items-center justify-between border-b bg-card px-4 md:px-6 shrink-0">
-      <h1 className="text-base md:text-lg font-semibold text-foreground">{title}</h1>
+    <header className="flex h-14 shrink-0 items-center justify-between border-b border-border/80 bg-card/90 px-4 backdrop-blur md:h-16 md:px-6">
+      <h1 className="text-base font-semibold tracking-tight text-foreground md:text-lg">{title}</h1>
       <Button
         variant="ghost"
         size="sm"

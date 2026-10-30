@@ -48,18 +48,18 @@ export function Sidebar({ role, userName, onClose }: SidebarProps) {
   const items = NAV_ITEMS[role] ?? [];
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r bg-card">
+    <aside className="flex h-full w-64 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground shadow-[8px_0_24px_rgba(20,50,35,0.08)]">
       {/* Brand */}
       <div className="flex items-center justify-between px-6 py-6 border-b">
         <div>
-          <p className="text-base font-bold tracking-tight text-foreground">Fuel Distribution</p>
-          <p className="text-xs text-muted-foreground mt-1">Bangladesh Petroleum Corp.</p>
+          <p className="text-base font-bold tracking-tight text-sidebar-foreground">Fuel Distribution</p>
+            <p className="mt-1 text-xs text-sidebar-foreground/65">Bangladesh Petroleum Corp.</p>
         </div>
         {/* Close button — only shown on mobile drawer */}
         {onClose && (
           <button
             onClick={onClose}
-            className="ml-2 rounded p-1 text-muted-foreground hover:text-foreground"
+            className="ml-2 rounded p-1 text-sidebar-foreground/60 hover:text-sidebar-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -78,8 +78,8 @@ export function Sidebar({ role, userName, onClose }: SidebarProps) {
               className={cn(
                 "flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
               {item.label}
@@ -89,9 +89,9 @@ export function Sidebar({ role, userName, onClose }: SidebarProps) {
       </nav>
 
       {/* User info */}
-      <div className="px-4 py-4 border-t">
-        <p className="text-xs font-medium text-foreground truncate">{userName}</p>
-        <p className="text-xs text-muted-foreground">{ROLE_LABEL[role]}</p>
+      <div className="border-t border-sidebar-border px-4 py-4">
+        <p className="truncate text-xs font-medium text-sidebar-foreground">{userName}</p>
+        <p className="text-xs text-sidebar-foreground/60">{ROLE_LABEL[role]}</p>
       </div>
     </aside>
   );
