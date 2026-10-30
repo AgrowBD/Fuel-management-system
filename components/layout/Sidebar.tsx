@@ -22,11 +22,12 @@ const NAV_ITEMS: Record<Role, NavItem[]> = {
   ADMIN: [
     { label: "Overview", href: "/admin" },
     { label: "Transactions", href: "/admin/transactions" },
+    { label: "Vehicles", href: "/admin/vehicles" },
     { label: "Users", href: "/admin/users" },
     { label: "Distribution Rules", href: "/admin/rules" },
     { label: "Govt Quota Rules", href: "/admin/govt-rules" },
     { label: "Print Fuel Card", href: "/admin/fuel-card-print" },
-    { label: "Reports", href: "/admin/reports" },
+    { label: "Analytics", href: "/admin/reports" },
   ],
 };
 

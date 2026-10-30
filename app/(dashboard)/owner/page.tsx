@@ -16,9 +16,10 @@ import type { VehicleType } from "@/types";
 export default async function OwnerOverviewPage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "VEHICLE_OWNER") redirect("/login");
+  if (!session.user.ownerId) redirect("/login");
 
   const vehicles = await prisma.vehicle.findMany({
-    where: { isActive: true, ownerName: session.user.name },
+    where: { isActive: true, ownerId: session.user.ownerId },
     orderBy: { registeredAt: "asc" },
   });
 

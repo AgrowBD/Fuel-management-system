@@ -12,6 +12,7 @@ declare module "next-auth" {
       email: string;
       name: string;
       role: Role;
+      ownerId?: string | null;
     };
   }
   interface User {
@@ -19,12 +20,14 @@ declare module "next-auth" {
     email: string;
     name: string;
     role: Role;
+    ownerId?: string | null;
   }
 }
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: Role;
+    ownerId?: string | null;
   }
 }
 
@@ -57,6 +60,7 @@ export const authOptions: NextAuthOptions = {
             email: user.email,
             name: user.fullName,
             role: user.role as Role,
+            ownerId: user.ownerId,
           };
         } catch {
           return null;
@@ -71,6 +75,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.ownerId = user.ownerId;
       }
       return token;
     },
@@ -78,6 +83,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       session.user.id = token.id;
       session.user.role = token.role;
+      session.user.ownerId = token.ownerId;
       return session;
     },
   },

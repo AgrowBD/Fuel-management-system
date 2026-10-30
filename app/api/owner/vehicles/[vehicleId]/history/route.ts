@@ -10,6 +10,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ vehicleI
   if (!session || session.user.role !== "VEHICLE_OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!session.user.ownerId) {
+    return NextResponse.json({ error: "Owner profile is not linked" }, { status: 403 });
+  }
 
   const { vehicleId } = await params;
   const { searchParams } = new URL(req.url);
@@ -19,13 +22,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ vehicleI
 
   const [transactions, total] = await Promise.all([
     prisma.fuelTransaction.findMany({
-      where: { vehicleId },
+      where: { vehicleId, vehicle: { ownerId: session.user.ownerId } },
       orderBy: { transactedAt: "desc" },
       skip,
       take: limit,
       include: { operator: { select: { fullName: true } } },
     }),
-    prisma.fuelTransaction.count({ where: { vehicleId } }),
+    prisma.fuelTransaction.count({ where: { vehicleId, vehicle: { ownerId: session.user.ownerId } } }),
   ]);
 
   return NextResponse.json({ transactions, total, page, limit });

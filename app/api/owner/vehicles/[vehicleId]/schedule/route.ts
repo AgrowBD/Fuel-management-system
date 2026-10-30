@@ -10,10 +10,13 @@ export async function GET(_req: Request, { params }: { params: Promise<{ vehicle
   if (!session || session.user.role !== "VEHICLE_OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!session.user.ownerId) {
+    return NextResponse.json({ error: "Owner profile is not linked" }, { status: 403 });
+  }
 
   const { vehicleId } = await params;
   const schedule = await prisma.fuelSchedule.findFirst({
-    where: { vehicleId, isCompleted: false, isCancelled: false },
+    where: { vehicleId, vehicle: { ownerId: session.user.ownerId }, isCompleted: false, isCancelled: false },
     orderBy: { scheduledDate: "asc" },
   });
 

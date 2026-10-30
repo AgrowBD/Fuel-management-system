@@ -92,7 +92,26 @@ async function main() {
   }
   console.log(`  ✓ ${govtRules.length} government quota rules`);
 
-  // ─── 5. Users ────────────────────────────────────────────────────────────
+  // ─── 5. Fuel companies ───────────────────────────────────────────────────
+  const fuelCompanies = [
+    { name: "Padma Oil Company", startingAvailableLiters: 500000 },
+    { name: "Meghna Petroleum", startingAvailableLiters: 450000 },
+    { name: "Jamuna Oil Company", startingAvailableLiters: 400000 },
+  ];
+
+  const companyByName = new Map<string, { id: string; name: string }>();
+  for (const company of fuelCompanies) {
+    const record = await prisma.fuelCompany.upsert({
+      where: { name: company.name },
+      update: { startingAvailableLiters: company.startingAvailableLiters, isActive: true },
+      create: company,
+      select: { id: true, name: true },
+    });
+    companyByName.set(record.name, record);
+  }
+  console.log(`  ✓ ${fuelCompanies.length} fuel companies`);
+
+  // ─── 6. Users ────────────────────────────────────────────────────────────
   const saltRounds = 12;
 
   await prisma.user.upsert({
@@ -133,7 +152,7 @@ async function main() {
 
   await prisma.operatorProfile.upsert({
     where: { userId: operatorUser.id },
-    update: {},
+    update: { companyId: companyByName.get("Padma Oil Company")!.id },
     create: {
       userId: operatorUser.id,
       tradeLicenseNo: "TL-2020-00101",
@@ -141,12 +160,13 @@ async function main() {
       pumpAddress: "Mirpur 10, Dhaka",
       division: "Dhaka",
       district: "Dhaka",
+      companyId: companyByName.get("Padma Oil Company")!.id,
     },
   });
 
   console.log("  ✓ 3 users (admin, owner, operator)");
 
-  // ─── 6. Vehicles ─────────────────────────────────────────────────────────
+  // ─── 7. Vehicles ─────────────────────────────────────────────────────────
   // Civilian vehicles: most have no fuel card; a handful do for demo.
   // Government vehicles: all must have a fuel card (enforced here).
   const vehicleData = [
@@ -185,12 +205,58 @@ async function main() {
     { licenseNumber: "GOVT-DHA-TRK-001", vehicleType: "TRUCK", make: "Tata", model: "LPT 2518", year: 2019, ownerName: "Bangladesh Army", isGovernment: true, fuelCardNumber: "FC-GOVT-0006" },
   ];
 
+  const ownerSeed = [
+    ["Rahim Uddin", "1000000001"],
+    ["Karim Hossain", "1000000002"],
+    ["Nadia Begum", "1000000003"],
+    ["Jalal Ahmed", "1000000004"],
+    ["Faruk Miah", "1000000005"],
+    ["Monir Chowdhury", "1000000006"],
+    ["Roksana Islam", "1000000007"],
+    ["Tanvir Rahman", "1000000008"],
+    ["Mina Transport", "1000000009"],
+    ["Selim Transport Ltd", "1000000010"],
+    ["Alam Brothers Logistics", "1000000011"],
+    ["Rapid Cargo Ltd", "1000000012"],
+    ["Green Line Paribahan", "1000000013"],
+    ["Ena Transport", "1000000014"],
+    ["Salma Akter", "1000000015"],
+    ["Shahidul Khan", "1000000016"],
+    ["Anwar Logistics", "1000000017"],
+    ["Rubel Ahmed", "1000000018"],
+    ["Habib Miah", "1000000019"],
+    ["Dhaka Express", "1000000020"],
+    ["Ministry of Finance", "2000000001"],
+    ["Ministry of Health", "2000000002"],
+    ["Ministry of Education", "2000000003"],
+    ["Bangladesh Police", "2000000004"],
+    ["Bangladesh Army", "2000000005"],
+  ] as const;
+
+  const ownerByName = new Map<string, { id: string; fullName: string }>();
+  for (const [fullName, nid] of ownerSeed) {
+    const owner = await prisma.owner.upsert({
+      where: { nid },
+      update: { fullName, isActive: true },
+      create: { nid, fullName },
+      select: { id: true, fullName: true },
+    });
+    ownerByName.set(owner.fullName, owner);
+  }
+  console.log(`  ✓ ${ownerSeed.length} owners`);
+
+  await prisma.user.update({
+    where: { email: "owner@fuel.bd" },
+    data: { ownerId: ownerByName.get(OWNER_FULL_NAME)!.id },
+  });
+
   const vehicles: { id: string; licenseNumber: string; vehicleType: string }[] = [];
   for (const v of vehicleData) {
+    const owner = ownerByName.get(v.ownerName);
     const vehicle = await prisma.vehicle.upsert({
       where: { licenseNumber: v.licenseNumber },
-      update: { fuelCardNumber: v.fuelCardNumber, isGovernment: v.isGovernment },
-      create: v,
+      update: { fuelCardNumber: v.fuelCardNumber, isGovernment: v.isGovernment, ownerId: owner?.id },
+      create: { ...v, ownerId: owner?.id },
     });
     vehicles.push(vehicle);
   }
@@ -198,7 +264,7 @@ async function main() {
 
   const vByLicense = (license: string) => vehicles.find((v) => v.licenseNumber === license)!;
 
-  // ─── 7. Historical transactions ─────────────────────────────────────────
+  // ─── 8. Historical transactions ─────────────────────────────────────────
   await prisma.fuelSchedule.deleteMany({});
   await prisma.fuelTransaction.deleteMany({});
 
@@ -239,6 +305,7 @@ async function main() {
       data: {
         vehicleId: vehicle.id,
         operatorId: operatorUser.id,
+        companyId: companyByName.get("Padma Oil Company")!.id,
         litersRequested: t.litersRequested,
         litersDispensed: t.litersDispensed,
         status: t.status,
@@ -250,7 +317,7 @@ async function main() {
   }
   console.log(`  ✓ ${transactionSeed.length} historical transactions`);
 
-  // ─── 8. Upcoming schedules ───────────────────────────────────────────────
+  // ─── 9. Upcoming schedules ───────────────────────────────────────────────
   const timeSlots = ["08:00-09:00", "09:00-10:00", "10:00-11:00", "11:00-12:00", "14:00-15:00", "15:00-16:00"];
 
   const scheduleSeed = [

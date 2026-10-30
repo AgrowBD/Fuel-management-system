@@ -55,8 +55,12 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  ownerId         String?
   operatorProfile OperatorProfile?
   transactions    FuelTransaction[] @relation("OperatorTransactions")
+  owner           Owner?             @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+
+  @@index([ownerId])
 
   @@map("users")
 }
@@ -69,11 +73,42 @@ model OperatorProfile {
   pumpAddress    String
   division       String
   district       String
+  companyId      String?
   createdAt      DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company FuelCompany? @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   @@map("operator_profiles")
+}
+
+model Owner {
+  id        String   @id @default(cuid())
+  nid       String   @unique
+  fullName  String
+  phone     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users    User[]
+  vehicles Vehicle[]
+
+  @@map("owners")
+}
+
+model FuelCompany {
+  id                      String   @id @default(cuid())
+  name                    String   @unique
+  startingAvailableLiters Float    @default(0)
+  isActive                Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  operatorProfiles OperatorProfile[]
+  transactions    FuelTransaction[]
+
+  @@map("fuel_companies")
 }
 
 model Vehicle {
@@ -84,6 +119,7 @@ model Vehicle {
   model          String
   year           Int
   ownerName      String
+  ownerId        String?
   isGovernment   Boolean  @default(false)
   fuelCardNumber String?  @unique
   isActive       Boolean  @default(true)
@@ -91,7 +127,9 @@ model Vehicle {
 
   transactions FuelTransaction[]
   schedules    FuelSchedule[]
+  owner        Owner? @relation(fields: [ownerId], references: [id], onDelete: SetNull)
 
+  @@index([ownerId])
   @@map("vehicles")
 }
 
@@ -121,6 +159,7 @@ model FuelTransaction {
   id              String   @id @default(cuid())
   vehicleId       String
   operatorId      String
+  companyId       String?
   litersRequested Float
   litersDispensed Float
   status          String   // TransactionStatus
@@ -131,9 +170,11 @@ model FuelTransaction {
 
   vehicle  Vehicle @relation(fields: [vehicleId], references: [id])
   operator User    @relation("OperatorTransactions", fields: [operatorId], references: [id])
+  company  FuelCompany? @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
   @@index([vehicleId, transactedAt])
   @@index([operatorId, transactedAt])
+  @@index([companyId, transactedAt])
   @@map("fuel_transactions")
 }
 
