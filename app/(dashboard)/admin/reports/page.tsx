@@ -69,7 +69,7 @@ export default function AdminAnalyticsPage() {
   return (
     <div className="flex h-full flex-col bg-[#101817] text-[#e9f1e8]">
       <Topbar title="Fuel Analytics" theme="dark" />
-      <main className="flex-1 space-y-6 overflow-y-auto bg-[#101817] p-4 text-[#e9f1e8] md:p-6 [&_[data-slot=card]]:border-[#38534a] [&_[data-slot=card]]:bg-[#182521] [&_[data-slot=card]]:text-[#e9f1e8]">
+      <main className="flex-1 space-y-10 overflow-y-auto bg-[#101817] p-4 text-[#e9f1e8] md:p-8 [&_[data-slot=card]]:border [&_[data-slot=card]]:border-[#38534a]/75 [&_[data-slot=card]]:bg-[#182521] [&_[data-slot=card]]:text-[#e9f1e8]">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">BPC monitoring view</p>
@@ -77,16 +77,16 @@ export default function AdminAnalyticsPage() {
             <p className="mt-1 max-w-2xl text-sm text-[#9fb5ad]">Projected usage based on recorded dispensing trends, not a measured national reserve.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex rounded-md border p-1" role="group" aria-label="Analytics data mode">
-              <Button type="button" size="sm" variant={mode === "demo" ? "default" : "ghost"} onClick={() => switchMode("demo")}>Demonstrate</Button>
-              <Button type="button" size="sm" variant={mode === "real" ? "default" : "ghost"} onClick={() => switchMode("real")}>Real data</Button>
+            <div className="flex rounded-lg border border-[#527166] bg-[#14211e] p-1 shadow-sm" role="group" aria-label="Analytics data mode">
+              <Button type="button" size="sm" variant={mode === "demo" ? "default" : "ghost"} onClick={() => switchMode("demo")} className="border border-transparent">Demonstrate</Button>
+              <Button type="button" size="sm" variant={mode === "real" ? "default" : "ghost"} onClick={() => switchMode("real")} className="border border-transparent">Real data</Button>
             </div>
-            <select value={days} onChange={(event) => setDays(Number(event.target.value))} className="h-9 rounded-md border border-[#38534a] bg-[#182521] px-3 text-sm text-[#e9f1e8]" aria-label="Analytics period">
+            <select value={days} onChange={(event) => setDays(Number(event.target.value))} className="h-9 rounded-lg border border-[#527166] bg-[#182521] px-3 text-sm text-[#e9f1e8] shadow-sm outline-none focus:border-[#8ac48a] focus:ring-2 focus:ring-[#8ac48a]/30" aria-label="Analytics period">
               <option value={7}>7 days</option>
               <option value={30}>30 days</option>
               <option value={90}>90 days</option>
             </select>
-            <Button type="button" size="sm" variant="outline" onClick={refreshAnalytics} disabled={refreshing} className="gap-2 border-[#38534a] bg-[#182521] text-[#e9f1e8] hover:bg-[#294039]">
+            <Button type="button" size="sm" variant="outline" onClick={refreshAnalytics} disabled={refreshing} className="gap-2 rounded-lg border-[#527166] bg-[#182521] text-[#e9f1e8] shadow-sm hover:border-[#8ac48a] hover:bg-[#294039]">
               <RefreshCw className={refreshing ? "size-3.5 animate-spin" : "size-3.5"} />
               {refreshing ? "Refreshing" : "Refresh"}
             </Button>
@@ -94,21 +94,21 @@ export default function AdminAnalyticsPage() {
         </div>
 
         <div className="flex items-center gap-2 text-xs text-[#9fb5ad]">
-          <Badge variant="outline">{mode === "demo" ? "Demonstration data" : "Live transaction data"}</Badge>
+          <Badge variant="outline" className="border-[#527166] text-[#b7cbc2]">{mode === "demo" ? "Demonstration data" : "Live transaction data"}</Badge>
           {data && <span>Refreshes automatically every minute · Updated {new Date(data.generatedAt).toLocaleTimeString()}</span>}
         </div>
 
         {error && <Card><CardContent className="py-6 text-sm text-destructive">{error}</CardContent></Card>}
         {loading && !data ? <AnalyticsSkeleton /> : data && (
           <div key={chartRefreshKey} className="analytics-chart-load">
-            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
               <Metric title="Fuel dispensed" value={formatLiters(data.summary.totalLiters)} />
               <Metric title="Average per day" value={formatLiters(data.summary.averageDailyLiters)} />
               <Metric title="Projected days remaining" value={data.summary.projectedDaysRemaining ? `${data.summary.projectedDaysRemaining} days` : "Configure forecast"} />
               <Metric title="Projected depletion" value={data.summary.projectedDepletionDate ?? "Not available"} />
             </div>
 
-            <div className="grid gap-8 xl:grid-cols-[1.4fr_1fr]">
+            <div className="grid gap-10 xl:grid-cols-[1.4fr_1fr]">
               <Card>
                 <CardHeader><CardTitle>Daily demand</CardTitle><CardDescription>Liters dispensed across the selected period</CardDescription></CardHeader>
                 <CardContent><ResponsiveContainer width="100%" height={280}><AreaChart data={data.daily}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString()} L`, "Dispensed"]} /><Area type="monotone" dataKey="liters" stroke="#166534" fill="#bbf7d0" strokeWidth={2} /></AreaChart></ResponsiveContainer></CardContent>
@@ -119,7 +119,7 @@ export default function AdminAnalyticsPage() {
               </Card>
             </div>
 
-            <div className="grid gap-8 xl:grid-cols-2">
+            <div className="grid gap-10 xl:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle>Demand by vehicle type</CardTitle><CardDescription>Useful for identifying consumption concentration</CardDescription></CardHeader>
                 <CardContent><ResponsiveContainer width="100%" height={260}><BarChart data={data.byVehicleType} layout="vertical" margin={{ left: 18, right: 12 }}><CartesianGrid strokeDasharray="3 3" horizontal={false} /><XAxis type="number" tick={{ fontSize: 11 }} /><YAxis type="category" dataKey="label" width={105} tick={{ fontSize: 11 }} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString()} L`, "Dispensed"]} /><Bar dataKey="liters" fill="#0f766e" radius={[0, 4, 4, 0]} /></BarChart></ResponsiveContainer></CardContent>
@@ -130,7 +130,7 @@ export default function AdminAnalyticsPage() {
               </Card>
             </div>
 
-            <div className="grid gap-8 xl:grid-cols-2">
+            <div className="grid gap-10 xl:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle>Fuel sales by division</CardTitle><CardDescription>Demonstration distribution across Bangladesh&apos;s eight divisions</CardDescription></CardHeader>
                 <CardContent><ResponsiveContainer width="100%" height={290}><BarChart data={data.byDivision} margin={{ left: 4, right: 12 }}><CartesianGrid stroke="#294039" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="division" tick={{ fill: "#b7cbc2", fontSize: 11 }} interval={0} angle={-22} textAnchor="end" height={52} /><YAxis tick={{ fill: "#b7cbc2", fontSize: 11 }} /><Tooltip contentStyle={{ background: "#182521", border: "1px solid #38534a", color: "#e9f1e8" }} formatter={(value) => [`${Number(value).toLocaleString()} L`, "Sales"]} /><Bar dataKey="liters" fill="#8ac48a" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>{mode === "real" && <p className="text-xs text-[#9fb5ad]">Division fields are not yet present in real transaction aggregates.</p>}</CardContent>
