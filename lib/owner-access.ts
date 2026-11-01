@@ -6,8 +6,15 @@ export async function getSessionOwnerId(session: Session): Promise<string | null
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { ownerId: true },
+    select: { ownerId: true, fullName: true },
   });
 
-  return user?.ownerId ?? null;
+  if (user?.ownerId) return user.ownerId;
+
+  const owner = user && await prisma.owner.findFirst({
+    where: { fullName: user.fullName, isActive: true },
+    select: { id: true },
+  });
+
+  return owner?.id ?? null;
 }

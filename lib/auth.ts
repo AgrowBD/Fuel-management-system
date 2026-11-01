@@ -77,11 +77,16 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.ownerId = user.ownerId;
       } else if (token.role === "VEHICLE_OWNER" && token.id && !token.ownerId) {
-        const owner = await prisma.user.findUnique({
+        const userRecord = await prisma.user.findUnique({
           where: { id: token.id },
-          select: { ownerId: true },
+          select: { ownerId: true, fullName: true },
         });
-        token.ownerId = owner?.ownerId;
+        token.ownerId = userRecord?.ownerId ?? (
+          userRecord && await prisma.owner.findFirst({
+            where: { fullName: userRecord.fullName, isActive: true },
+            select: { id: true },
+          })
+        )?.id;
       }
       return token;
     },
