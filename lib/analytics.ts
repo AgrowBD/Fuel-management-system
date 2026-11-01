@@ -16,13 +16,32 @@ export type AnalyticsPayload = {
   daily: Array<{ date: string; liters: number }>;
   byCompany: Array<{ company: string; liters: number; startingLiters: number; daysRemaining: number | null }>;
   byVehicleType: Array<{ type: string; label: string; liters: number }>;
+  byDivision: Array<{ division: string; liters: number }>;
+  oilPriceDemand: Array<{ price: number; demand: number; month: string }>;
 };
 
 const DEMO_COMPANIES = [
-  { company: "Padma Oil Company", liters: 12480, startingLiters: 500000 },
-  { company: "Meghna Petroleum", liters: 10320, startingLiters: 450000 },
-  { company: "Jamuna Oil Company", liters: 8460, startingLiters: 400000 },
+  { company: "Padma Oil Company", liters: 12480, startingLiters: 80000 },
+  { company: "Meghna Petroleum", liters: 10320, startingLiters: 70000 },
+  { company: "Jamuna Oil Company", liters: 8460, startingLiters: 55000 },
 ];
+
+const DEMO_DIVISIONS = [
+  ["Dhaka", 18400],
+  ["Mymensingh", 5920],
+  ["Sylhet", 4380],
+  ["Chattogram", 12100],
+  ["Barishal", 3710],
+  ["Rajshahi", 7240],
+  ["Rangpur", 5160],
+  ["Khulna", 8290],
+] as const;
+
+const DEMO_OIL_PRICE_DEMAND = [
+  [72, 710, "Jan"], [76, 755, "Feb"], [79, 790, "Mar"], [83, 824, "Apr"],
+  [87, 862, "May"], [91, 905, "Jun"], [95, 931, "Jul"], [89, 886, "Aug"],
+  [84, 844, "Sep"], [80, 812, "Oct"], [77, 776, "Nov"], [74, 742, "Dec"],
+] as const;
 
 const DEMO_TYPES = [
   ["CAR", 12900],
@@ -46,7 +65,7 @@ function buildDemoData(days: number): AnalyticsPayload {
   });
   const averageDailyLiters = daily.reduce((sum, item) => sum + item.liters, 0) / daily.length;
   const totalLiters = daily.reduce((sum, item) => sum + item.liters, 0);
-  const startingLiters = 1350000;
+  const startingLiters = 150000;
   const daysRemaining = Math.floor(startingLiters / averageDailyLiters);
 
   return {
@@ -69,6 +88,8 @@ function buildDemoData(days: number): AnalyticsPayload {
       label: VehicleTypeLabel[type as VehicleType] ?? type,
       liters,
     })),
+    byDivision: DEMO_DIVISIONS.map(([division, liters]) => ({ division, liters })),
+    oilPriceDemand: DEMO_OIL_PRICE_DEMAND.map(([price, demand, month]) => ({ price, demand, month })),
   };
 }
 
@@ -112,6 +133,8 @@ async function buildRealData(days: number): Promise<AnalyticsPayload> {
       return { company: company.name, liters: round(liters), startingLiters: company.startingAvailableLiters, daysRemaining: liters > 0 ? Math.floor(company.startingAvailableLiters / (liters / Math.max(days, 1))) : null };
     }),
     byVehicleType: Array.from(typeMap, ([type, liters]) => ({ type, label: VehicleTypeLabel[type as VehicleType] ?? type, liters: round(liters) })),
+    byDivision: [],
+    oilPriceDemand: [],
   };
 }
 

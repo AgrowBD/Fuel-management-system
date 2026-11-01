@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { Topbar } from "@/components/layout/Topbar";
 import { Badge } from "@/components/ui/badge";
@@ -50,21 +50,21 @@ export default function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="flex h-full flex-col">
-      <Topbar title="Fuel Analytics" />
-      <main className="flex-1 space-y-6 overflow-y-auto p-4 md:p-6">
+    <div className="flex h-full flex-col bg-[#101817] text-[#e9f1e8]">
+      <Topbar title="Fuel Analytics" theme="dark" />
+      <main className="flex-1 space-y-6 overflow-y-auto bg-[#101817] p-4 text-[#e9f1e8] md:p-6 [&_[data-slot=card]]:border-[#38534a] [&_[data-slot=card]]:bg-[#182521] [&_[data-slot=card]]:text-[#e9f1e8]">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">BPC monitoring view</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">BPC monitoring view</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">Demand and depletion forecast</h2>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Projected usage based on recorded dispensing trends, not a measured national reserve.</p>
+            <p className="mt-1 max-w-2xl text-sm text-[#9fb5ad]">Projected usage based on recorded dispensing trends, not a measured national reserve.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex rounded-md border p-1" role="group" aria-label="Analytics data mode">
               <Button type="button" size="sm" variant={mode === "demo" ? "default" : "ghost"} onClick={() => switchMode("demo")}>Demonstrate</Button>
               <Button type="button" size="sm" variant={mode === "real" ? "default" : "ghost"} onClick={() => switchMode("real")}>Real data</Button>
             </div>
-            <select value={days} onChange={(event) => setDays(Number(event.target.value))} className="h-9 rounded-md border bg-background px-3 text-sm" aria-label="Analytics period">
+            <select value={days} onChange={(event) => setDays(Number(event.target.value))} className="h-9 rounded-md border border-[#38534a] bg-[#182521] px-3 text-sm text-[#e9f1e8]" aria-label="Analytics period">
               <option value={7}>7 days</option>
               <option value={30}>30 days</option>
               <option value={90}>90 days</option>
@@ -72,7 +72,7 @@ export default function AdminAnalyticsPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-xs text-[#9fb5ad]">
           <Badge variant="outline">{mode === "demo" ? "Demonstration data" : "Live transaction data"}</Badge>
           {data && <span>Refreshes automatically every minute · Updated {new Date(data.generatedAt).toLocaleTimeString()}</span>}
         </div>
@@ -108,6 +108,17 @@ export default function AdminAnalyticsPage() {
                 <CardContent className="space-y-3">{data.byCompany.map((company) => <div key={company.company} className="rounded-md border p-3"><div className="flex items-center justify-between gap-3"><span className="text-sm font-medium">{company.company}</span><span className="text-sm font-semibold">{company.daysRemaining ? `${company.daysRemaining} days` : "No demand data"}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-emerald-700" style={{ width: `${Math.min(100, company.startingLiters ? (company.liters / company.startingLiters) * 100 * 12 : 0)}%` }} /></div><p className="mt-1 text-xs text-muted-foreground">Starting amount: {formatLiters(company.startingLiters)}</p></div>)}</CardContent>
               </Card>
             </div>
+
+            <div className="grid gap-6 xl:grid-cols-2">
+              <Card>
+                <CardHeader><CardTitle>Fuel sales by division</CardTitle><CardDescription>Demonstration distribution across Bangladesh&apos;s eight divisions</CardDescription></CardHeader>
+                <CardContent><ResponsiveContainer width="100%" height={290}><BarChart data={data.byDivision} margin={{ left: 4, right: 12 }}><CartesianGrid stroke="#294039" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="division" tick={{ fill: "#b7cbc2", fontSize: 11 }} interval={0} angle={-22} textAnchor="end" height={52} /><YAxis tick={{ fill: "#b7cbc2", fontSize: 11 }} /><Tooltip contentStyle={{ background: "#182521", border: "1px solid #38534a", color: "#e9f1e8" }} formatter={(value) => [`${Number(value).toLocaleString()} L`, "Sales"]} /><Bar dataKey="liters" fill="#8ac48a" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>{mode === "real" && <p className="text-xs text-[#9fb5ad]">Division fields are not yet present in real transaction aggregates.</p>}</CardContent>
+              </Card>
+              <Card>
+                <CardHeader><CardTitle>Global oil price vs demand</CardTitle><CardDescription>Dummy correlation view: higher benchmark prices paired with modeled demand</CardDescription></CardHeader>
+                <CardContent><ResponsiveContainer width="100%" height={290}><ScatterChart margin={{ top: 12, right: 18, bottom: 12, left: 0 }}><CartesianGrid stroke="#294039" strokeDasharray="3 3" /><XAxis type="number" dataKey="price" name="Oil price" unit=" USD" tick={{ fill: "#b7cbc2", fontSize: 11 }} /><YAxis type="number" dataKey="demand" name="Demand" unit=" L/day" tick={{ fill: "#b7cbc2", fontSize: 11 }} /><Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={{ background: "#182521", border: "1px solid #38534a", color: "#e9f1e8" }} formatter={(value, name) => [name === "Oil price" ? `$${value}` : `${Number(value).toLocaleString()} L/day`, name]} /><Scatter name="Monthly observations" data={data.oilPriceDemand} fill="#e6b85c" /></ScatterChart></ResponsiveContainer>{mode === "real" && <p className="text-xs text-[#9fb5ad]">Global price correlation is available in Demonstrate mode only.</p>}</CardContent>
+              </Card>
+            </div>
           </>
         )}
       </main>
@@ -116,7 +127,7 @@ export default function AdminAnalyticsPage() {
 }
 
 function Metric({ title, value }: { title: string; value: string }) {
-  return <Card><CardContent className="pt-5"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{title}</p><p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p></CardContent></Card>;
+  return <Card><CardContent className="pt-5"><p className="text-xs font-medium uppercase tracking-wide text-[#9fb5ad]">{title}</p><p className="mt-2 text-2xl font-semibold tracking-tight text-[#f2f7ed]">{value}</p></CardContent></Card>;
 }
 
 function AnalyticsSkeleton() {
