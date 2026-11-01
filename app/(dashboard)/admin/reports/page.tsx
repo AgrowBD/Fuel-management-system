@@ -100,7 +100,7 @@ export default function AdminAnalyticsPage() {
 
         {error && <Card><CardContent className="py-6 text-sm text-destructive">{error}</CardContent></Card>}
         {loading && !data ? <AnalyticsSkeleton /> : data && (
-          <div key={chartRefreshKey} className="analytics-chart-load">
+          <div key={chartRefreshKey} className="analytics-chart-load space-y-16">
             <div className="grid gap-x-8 gap-y-12 sm:grid-cols-2 xl:grid-cols-4">
               <Metric title="Fuel dispensed" value={formatLiters(data.summary.totalLiters)} />
               <Metric title="Average per day" value={formatLiters(data.summary.averageDailyLiters)} />
