@@ -54,7 +54,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
+    <div className="editorial-canvas flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md space-y-6 page-enter">
         {/* Header */}
         <div className="border-l-4 border-primary pl-4">

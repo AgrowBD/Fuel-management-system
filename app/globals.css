@@ -51,7 +51,7 @@
 :root {
   --background: oklch(0.965 0.012 92);
   --foreground: oklch(0.22 0.025 155);
-  --card: oklch(1 0 0);
+  --card: oklch(0.985 0.012 92);
   --card-foreground: oklch(0.22 0.025 155);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.025 155);
@@ -124,9 +124,11 @@
   body {
     @apply bg-background text-foreground text-[15px] leading-6;
     background-image:
-      radial-gradient(oklch(0.35 0.03 155 / 0.1) 0.8px, transparent 0.8px),
-      linear-gradient(135deg, oklch(1 0 0 / 0.22), transparent 42%);
-    background-size: 8px 8px, 100% 100%;
+      radial-gradient(oklch(0.3 0.035 155 / 0.13) 0.8px, transparent 0.8px),
+      radial-gradient(oklch(0.7 0.05 92 / 0.16) 1px, transparent 1px),
+      linear-gradient(135deg, oklch(1 0 0 / 0.16), transparent 42%);
+    background-position: 0 0, 4px 4px, 0 0;
+    background-size: 8px 8px, 13px 13px, 100% 100%;
   }
   html {
     @apply font-sans;
@@ -149,6 +151,16 @@
       radial-gradient(oklch(0.35 0.03 155 / 0.08) 0.8px, transparent 0.8px),
       linear-gradient(135deg, oklch(1 0 0 / 0.2), transparent 55%);
     background-size: 9px 9px, 100% 100%;
+  }
+
+  .editorial-canvas {
+    background-color: var(--background);
+    background-image:
+      radial-gradient(oklch(0.3 0.035 155 / 0.12) 0.8px, transparent 0.8px),
+      radial-gradient(oklch(0.7 0.05 92 / 0.14) 1px, transparent 1px),
+      linear-gradient(120deg, oklch(1 0 0 / 0.18), transparent 48%);
+    background-position: 0 0, 5px 5px, 0 0;
+    background-size: 9px 9px, 15px 15px, 100% 100%;
   }
 }
 

@@ -16,7 +16,7 @@ export function DashboardShell({ role, userName, children }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="editorial-canvas flex h-screen overflow-hidden">
       {/* ── Desktop sidebar (always visible) ── */}
       <div className="hidden md:flex md:shrink-0">
         <Sidebar role={role} userName={userName} />
