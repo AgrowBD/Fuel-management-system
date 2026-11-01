@@ -67,8 +67,8 @@ export function Sidebar({ role, userName, onClose }: SidebarProps) {
             <Fuel className="size-5" />
           </div>
           <div>
-            <p className="text-base font-bold tracking-tight text-sidebar-foreground">Fuel Distribution</p>
-            <p className="mt-1 text-xs text-sidebar-foreground/65">Bangladesh Petroleum Corp.</p>
+            <p className="text-[1.05rem] font-bold tracking-tight text-sidebar-foreground">Fuel Distribution</p>
+            <p className="mt-1 text-[0.8rem] text-sidebar-foreground/65">Bangladesh Petroleum Corp.</p>
           </div>
         </div>
         {/* Close button — only shown on mobile drawer */}
@@ -92,7 +92,7 @@ export function Sidebar({ role, userName, onClose }: SidebarProps) {
               href={item.href}
               onClick={onClose} // close drawer on navigation (mobile)
               className={cn(
-                "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                "group flex items-center gap-3 rounded-lg px-3.5 py-3 text-[0.95rem] font-medium transition-all duration-200",
                 isActive
                   ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
                   : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
@@ -107,8 +107,8 @@ export function Sidebar({ role, userName, onClose }: SidebarProps) {
 
       {/* User info */}
       <div className="border-t border-sidebar-border px-4 py-4">
-        <p className="truncate text-xs font-medium text-sidebar-foreground">{userName}</p>
-        <p className="text-xs text-sidebar-foreground/60">{ROLE_LABEL[role]}</p>
+        <p className="truncate text-sm font-medium text-sidebar-foreground">{userName}</p>
+        <p className="text-[0.8rem] text-sidebar-foreground/60">{ROLE_LABEL[role]}</p>
       </div>
     </aside>
   );
