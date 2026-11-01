@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { Topbar } from "@/components/layout/Topbar";
@@ -21,6 +22,7 @@ export default function AdminAnalyticsPage() {
   const [days, setDays] = useState(30);
   const [data, setData] = useState<AnalyticsPayload | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   const fetchAnalytics = useCallback(async () => {
@@ -30,8 +32,10 @@ export default function AdminAnalyticsPage() {
       if (!response.ok) throw new Error(result.error ?? "Analytics unavailable");
       setData(result);
       setError("");
+      return true;
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Analytics unavailable");
+      return false;
     } finally {
       setLoading(false);
     }
@@ -47,6 +51,13 @@ export default function AdminAnalyticsPage() {
   function switchMode(nextMode: "demo" | "real") {
     setMode(nextMode);
     if (nextMode === "real") toast.info("Real transaction data selected");
+  }
+
+  async function refreshAnalytics() {
+    setRefreshing(true);
+    const refreshed = await fetchAnalytics();
+    setRefreshing(false);
+    if (refreshed) toast.success("Analytics refreshed");
   }
 
   return (
@@ -69,6 +80,10 @@ export default function AdminAnalyticsPage() {
               <option value={30}>30 days</option>
               <option value={90}>90 days</option>
             </select>
+            <Button type="button" size="sm" variant="outline" onClick={refreshAnalytics} disabled={refreshing} className="gap-2 border-[#38534a] bg-[#182521] text-[#e9f1e8] hover:bg-[#294039]">
+              <RefreshCw className={refreshing ? "size-3.5 animate-spin" : "size-3.5"} />
+              {refreshing ? "Refreshing" : "Refresh"}
+            </Button>
           </div>
         </div>
 
@@ -90,18 +105,18 @@ export default function AdminAnalyticsPage() {
             <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
               <Card>
                 <CardHeader><CardTitle>Daily demand</CardTitle><CardDescription>Liters dispensed across the selected period</CardDescription></CardHeader>
-                <CardContent><div className="chart-stage"><ResponsiveContainer width="100%" height={280}><AreaChart data={data.daily}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString()} L`, "Dispensed"]} /><Area type="monotone" dataKey="liters" stroke="#8ac48a" fill="#2f6f52" fillOpacity={0.55} strokeWidth={2} /></AreaChart></ResponsiveContainer></div></CardContent>
+                <CardContent><ResponsiveContainer width="100%" height={280}><AreaChart data={data.daily}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString()} L`, "Dispensed"]} /><Area type="monotone" dataKey="liters" stroke="#166534" fill="#bbf7d0" strokeWidth={2} /></AreaChart></ResponsiveContainer></CardContent>
               </Card>
               <Card>
                 <CardHeader><CardTitle>Company share</CardTitle><CardDescription>Recorded demand by distribution company</CardDescription></CardHeader>
-                <CardContent><div className="chart-stage"><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={data.byCompany} dataKey="liters" nameKey="company" innerRadius={62} outerRadius={94} paddingAngle={3}>{data.byCompany.map((entry, index) => <Cell key={entry.company} fill={COLORS[index % COLORS.length]} />)}</Pie><Tooltip formatter={(value) => [`${Number(value).toLocaleString()} L`, "Dispensed"]} /></PieChart></ResponsiveContainer></div><div className="space-y-2">{data.byCompany.map((company, index) => <div key={company.company} className="flex items-center justify-between text-xs"><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />{company.company}</span><span className="font-medium">{formatLiters(company.liters)}</span></div>)}</div></CardContent>
+                <CardContent><ResponsiveContainer width="100%" height={280}><PieChart><Pie data={data.byCompany} dataKey="liters" nameKey="company" innerRadius={62} outerRadius={94} paddingAngle={3}>{data.byCompany.map((entry, index) => <Cell key={entry.company} fill={COLORS[index % COLORS.length]} />)}</Pie><Tooltip formatter={(value) => [`${Number(value).toLocaleString()} L`, "Dispensed"]} /></PieChart></ResponsiveContainer><div className="space-y-2">{data.byCompany.map((company, index) => <div key={company.company} className="flex items-center justify-between text-xs"><span className="flex items-center gap-2"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />{company.company}</span><span className="font-medium">{formatLiters(company.liters)}</span></div>)}</div></CardContent>
               </Card>
             </div>
 
             <div className="grid gap-6 xl:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle>Demand by vehicle type</CardTitle><CardDescription>Useful for identifying consumption concentration</CardDescription></CardHeader>
-                <CardContent><div className="chart-stage"><ResponsiveContainer width="100%" height={260}><BarChart data={data.byVehicleType} layout="vertical" margin={{ left: 18, right: 12 }}><CartesianGrid strokeDasharray="3 3" horizontal={false} /><XAxis type="number" tick={{ fontSize: 11 }} /><YAxis type="category" dataKey="label" width={105} tick={{ fontSize: 11 }} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString()} L`, "Dispensed"]} /><Bar dataKey="liters" fill="#62b69a" radius={[0, 4, 4, 0]} /></BarChart></ResponsiveContainer></div></CardContent>
+                <CardContent><ResponsiveContainer width="100%" height={260}><BarChart data={data.byVehicleType} layout="vertical" margin={{ left: 18, right: 12 }}><CartesianGrid strokeDasharray="3 3" horizontal={false} /><XAxis type="number" tick={{ fontSize: 11 }} /><YAxis type="category" dataKey="label" width={105} tick={{ fontSize: 11 }} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString()} L`, "Dispensed"]} /><Bar dataKey="liters" fill="#0f766e" radius={[0, 4, 4, 0]} /></BarChart></ResponsiveContainer></CardContent>
               </Card>
               <Card>
                 <CardHeader><CardTitle>Company depletion outlook</CardTitle><CardDescription>Projection assumes no replenishment and continued current demand</CardDescription></CardHeader>
@@ -112,11 +127,11 @@ export default function AdminAnalyticsPage() {
             <div className="grid gap-6 xl:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle>Fuel sales by division</CardTitle><CardDescription>Demonstration distribution across Bangladesh&apos;s eight divisions</CardDescription></CardHeader>
-                <CardContent><div className="chart-stage"><ResponsiveContainer width="100%" height={290}><BarChart data={data.byDivision} margin={{ left: 4, right: 12 }}><CartesianGrid stroke="#294039" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="division" tick={{ fill: "#b7cbc2", fontSize: 11 }} interval={0} angle={-22} textAnchor="end" height={52} /><YAxis tick={{ fill: "#b7cbc2", fontSize: 11 }} /><Tooltip contentStyle={{ background: "#182521", border: "1px solid #38534a", color: "#e9f1e8" }} formatter={(value) => [`${Number(value).toLocaleString()} L`, "Sales"]} /><Bar dataKey="liters" fill="#8ac48a" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer></div>{mode === "real" && <p className="text-xs text-[#9fb5ad]">Division fields are not yet present in real transaction aggregates.</p>}</CardContent>
+                <CardContent><ResponsiveContainer width="100%" height={290}><BarChart data={data.byDivision} margin={{ left: 4, right: 12 }}><CartesianGrid stroke="#294039" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="division" tick={{ fill: "#b7cbc2", fontSize: 11 }} interval={0} angle={-22} textAnchor="end" height={52} /><YAxis tick={{ fill: "#b7cbc2", fontSize: 11 }} /><Tooltip contentStyle={{ background: "#182521", border: "1px solid #38534a", color: "#e9f1e8" }} formatter={(value) => [`${Number(value).toLocaleString()} L`, "Sales"]} /><Bar dataKey="liters" fill="#8ac48a" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>{mode === "real" && <p className="text-xs text-[#9fb5ad]">Division fields are not yet present in real transaction aggregates.</p>}</CardContent>
               </Card>
               <Card>
                 <CardHeader><CardTitle>Global oil price vs demand</CardTitle><CardDescription>Dummy correlation view: higher benchmark prices paired with modeled demand</CardDescription></CardHeader>
-                <CardContent><div className="chart-stage"><ResponsiveContainer width="100%" height={290}><ScatterChart margin={{ top: 12, right: 18, bottom: 12, left: 0 }}><CartesianGrid stroke="#294039" strokeDasharray="3 3" /><XAxis type="number" dataKey="price" name="Oil price" unit=" USD" tick={{ fill: "#b7cbc2", fontSize: 11 }} /><YAxis type="number" dataKey="demand" name="Demand" unit=" L/day" tick={{ fill: "#b7cbc2", fontSize: 11 }} /><Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={{ background: "#182521", border: "1px solid #38534a", color: "#e9f1e8" }} formatter={(value, name) => [name === "Oil price" ? `$${value}` : `${Number(value).toLocaleString()} L/day`, name]} /><Scatter name="Monthly observations" data={data.oilPriceDemand} fill="#e6b85c" /></ScatterChart></ResponsiveContainer></div>{mode === "real" && <p className="text-xs text-[#9fb5ad]">Global price correlation is available in Demonstrate mode only.</p>}</CardContent>
+                <CardContent><ResponsiveContainer width="100%" height={290}><ScatterChart margin={{ top: 12, right: 18, bottom: 12, left: 0 }}><CartesianGrid stroke="#294039" strokeDasharray="3 3" /><XAxis type="number" dataKey="price" name="Oil price" unit=" USD" tick={{ fill: "#b7cbc2", fontSize: 11 }} /><YAxis type="number" dataKey="demand" name="Demand" unit=" L/day" tick={{ fill: "#b7cbc2", fontSize: 11 }} /><Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={{ background: "#182521", border: "1px solid #38534a", color: "#e9f1e8" }} formatter={(value, name) => [name === "Oil price" ? `$${value}` : `${Number(value).toLocaleString()} L/day`, name]} /><Scatter name="Monthly observations" data={data.oilPriceDemand} fill="#e6b85c" /></ScatterChart></ResponsiveContainer>{mode === "real" && <p className="text-xs text-[#9fb5ad]">Global price correlation is available in Demonstrate mode only.</p>}</CardContent>
               </Card>
             </div>
           </>
