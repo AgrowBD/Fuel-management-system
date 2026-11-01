@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import QRCode from "react-qr-code";
-import { addDays, format } from "date-fns";
+import { addDays } from "date-fns";
+import { formatBangladeshDate } from "@/lib/bangladesh-time";
 
 interface Vehicle {
   licenseNumber: string;
@@ -17,7 +18,7 @@ interface Vehicle {
 // Deterministic expiry: 2 years + hash offset (0–89 days) so the same card always prints the same date
 function computeExpiry(cardNumber: string): string {
   const offset = [...cardNumber].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 90;
-  return format(addDays(new Date(), 365 * 2 + offset), "MM/yyyy");
+  return formatBangladeshDate(addDays(new Date(), 365 * 2 + offset), "MM/yyyy");
 }
 
 const VEHICLE_TYPE_LABEL: Record<string, string> = {

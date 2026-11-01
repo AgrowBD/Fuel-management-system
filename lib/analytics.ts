@@ -1,7 +1,8 @@
-import { subDays, format } from "date-fns";
+import { subDays } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { VehicleTypeLabel } from "@/types";
 import type { VehicleType } from "@/types";
+import { formatBangladeshDate } from "@/lib/bangladesh-time";
 
 export type AnalyticsPayload = {
   mode: "demo" | "real";
@@ -61,7 +62,7 @@ function buildDemoData(days: number): AnalyticsPayload {
     const date = subDays(new Date(), days - index - 1);
     const trend = 830 + index * 9;
     const variation = ((index * 17) % 61) - 30;
-    return { date: format(date, "dd MMM"), liters: Math.max(0, Math.round(trend + variation)) };
+    return { date: formatBangladeshDate(date, "dd MMM"), liters: Math.max(0, Math.round(trend + variation)) };
   });
   const averageDailyLiters = daily.reduce((sum, item) => sum + item.liters, 0) / daily.length;
   const totalLiters = daily.reduce((sum, item) => sum + item.liters, 0);
@@ -76,7 +77,7 @@ function buildDemoData(days: number): AnalyticsPayload {
       totalLiters: round(totalLiters),
       averageDailyLiters: round(averageDailyLiters),
       projectedDaysRemaining: daysRemaining,
-      projectedDepletionDate: format(subDays(new Date(), -daysRemaining), "yyyy-MM-dd"),
+      projectedDepletionDate: formatBangladeshDate(subDays(new Date(), -daysRemaining), "yyyy-MM-dd"),
     },
     daily,
     byCompany: DEMO_COMPANIES.map((item) => ({
@@ -107,7 +108,7 @@ async function buildRealData(days: number): Promise<AnalyticsPayload> {
   const typeMap = new Map<string, number>();
   const companyMap = new Map<string, number>();
   for (const transaction of transactions) {
-    const day = format(transaction.transactedAt, "dd MMM");
+    const day = formatBangladeshDate(transaction.transactedAt, "dd MMM");
     dailyMap.set(day, (dailyMap.get(day) ?? 0) + transaction.litersDispensed);
     typeMap.set(transaction.vehicle.vehicleType, (typeMap.get(transaction.vehicle.vehicleType) ?? 0) + transaction.litersDispensed);
     if (transaction.companyId) companyMap.set(transaction.companyId, (companyMap.get(transaction.companyId) ?? 0) + transaction.litersDispensed);

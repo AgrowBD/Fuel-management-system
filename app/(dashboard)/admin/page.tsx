@@ -3,8 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { startOfDay } from "date-fns";
-import { format } from "date-fns";
+import { formatBangladeshDate, startOfBangladeshDay } from "@/lib/bangladesh-time";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +16,7 @@ export default async function AdminOverviewPage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "ADMIN") redirect("/login");
 
-  const todayStart = startOfDay(new Date());
+  const todayStart = startOfBangladeshDay();
 
   const [totalVehicles, totalUsers, todayAgg, recentTransactions] = await Promise.all([
     prisma.vehicle.count({ where: { isActive: true } }),
@@ -83,7 +82,7 @@ export default async function AdminOverviewPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-muted-foreground text-xs">
-                          {format(new Date(t.transactedAt), "HH:mm")}
+                          {formatBangladeshDate(t.transactedAt, "HH:mm")}
                         </span>
                         <span className="font-medium">{t.litersDispensed}L</span>
                         <Badge

@@ -1,6 +1,6 @@
-import { addDays } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { checkEligibility } from "@/lib/eligibility";
+import { addBangladeshDays, bangladeshDateAt } from "@/lib/bangladesh-time";
 
 const TIME_SLOTS = [
   "08:00-09:00",
@@ -26,14 +26,23 @@ export async function assignNextSchedule(
   let scheduledDate: Date;
   if (eligibility.eligible) {
     // Partial fill — remainder still claimable, invite owner back tomorrow.
-    scheduledDate = addDays(new Date(), 1);
+    scheduledDate = addBangladeshDays(new Date(), 1);
   } else if (eligibility.reason === "IN_RESTRICTION_PERIOD") {
     scheduledDate = new Date(eligibility.restrictionEndsAt);
   } else {
     return;
   }
 
-  scheduledDate.setHours(8, 0, 0, 0);
+  if (eligibility.eligible) {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "Asia/Dhaka",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    }).formatToParts(scheduledDate);
+    const values = Object.fromEntries(parts.map((part) => [part.type, Number(part.value)]));
+    scheduledDate = bangladeshDateAt(values.year, values.month, values.day, 8);
+  }
 
   const slotIndex = vehicleId.charCodeAt(vehicleId.length - 1) % TIME_SLOTS.length;
   const timeSlot = TIME_SLOTS[slotIndex];

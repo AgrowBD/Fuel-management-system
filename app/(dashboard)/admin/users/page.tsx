@@ -1,7 +1,7 @@
 "use client";
 // Admin users page: view all users by role, toggle active/inactive status.
 import { useState, useEffect, useCallback } from "react";
-import { format } from "date-fns";
+import { formatBangladeshDate } from "@/lib/bangladesh-time";
 import { toast } from "sonner";
 import { Topbar } from "@/components/layout/Topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,7 +61,7 @@ function UserTable({ users, onToggle }: { users: User[]; onToggle: (id: string, 
             <tr key={u.id}>
               <td className="py-2.5 pr-4 font-medium">{u.fullName}</td>
               <td className="py-2.5 pr-4 text-muted-foreground">{u.email}</td>
-              <td className="py-2.5 pr-4 text-muted-foreground">{format(new Date(u.createdAt), "dd MMM yyyy")}</td>
+              <td className="py-2.5 pr-4 text-muted-foreground">{formatBangladeshDate(u.createdAt, "dd MMM yyyy")}</td>
               <td className="py-2.5 pr-4 text-muted-foreground text-xs">
                 {u.operatorProfile
                   ? `${u.operatorProfile.pumpName} · ${u.operatorProfile.company?.name ?? "Unassigned"}`

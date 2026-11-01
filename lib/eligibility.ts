@@ -1,6 +1,7 @@
-import { addDays, differenceInCalendarDays, isBefore } from "date-fns";
+import { addDays, isBefore } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import type { EligibilityResult, VehicleType } from "@/types";
+import { differenceInBangladeshCalendarDays } from "@/lib/bangladesh-time";
 
 // Resolves the quota rule for a vehicle: GovernmentQuotaRule for govt, DistributionRule for civilian.
 async function getRule(vehicleType: string, isGovernment: boolean) {
@@ -81,7 +82,7 @@ export async function checkEligibilityForVehicle(vehicle: {
 
   const cycle = [recentTxs[0]];
   for (let i = 1; i < recentTxs.length; i++) {
-    const gap = differenceInCalendarDays(recentTxs[i - 1].transactedAt, recentTxs[i].transactedAt);
+    const gap = differenceInBangladeshCalendarDays(recentTxs[i - 1].transactedAt, recentTxs[i].transactedAt);
     if (gap < rule.restrictionDays) cycle.push(recentTxs[i]);
     else break;
   }

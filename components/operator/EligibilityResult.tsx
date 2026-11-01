@@ -1,7 +1,7 @@
 "use client";
 // Displays the result of an eligibility check as a colored card.
 // Green = eligible, Red = restricted, Orange = not registered.
-import { format } from "date-fns";
+import { formatBangladeshDate } from "@/lib/bangladesh-time";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -58,8 +58,8 @@ export function EligibilityResult({ result, liters, onLitersChange, onDispense, 
             {result.fuelCardNumber && (
               <><span>Fuel Card</span><span className="text-foreground font-medium">{result.fuelCardNumber}</span></>
             )}
-            <span>Last Fuelled</span><span className="text-foreground font-medium">{format(new Date(result.lastTransactionAt), "dd MMM yyyy, HH:mm")}</span>
-            <span>Eligible From</span><span className="text-foreground font-medium">{format(new Date(result.restrictionEndsAt), "dd MMM yyyy, HH:mm")}</span>
+            <span>Last Fuelled</span><span className="text-foreground font-medium">{formatBangladeshDate(result.lastTransactionAt, "dd MMM yyyy, HH:mm")}</span>
+            <span>Eligible From</span><span className="text-foreground font-medium">{formatBangladeshDate(result.restrictionEndsAt, "dd MMM yyyy, HH:mm")}</span>
             <span>Can Get Now</span><span className="text-destructive font-bold">0 liters</span>
           </div>
         </CardContent>

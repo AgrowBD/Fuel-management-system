@@ -1,5 +1,5 @@
-// GET /api/admin/owners/lookup?nid=0000000000
-// Admin-only owner lookup. The NID is used for lookup but never returned.
+// GET /api/admin/owners/lookup?nid=0000000000 or ?licenseNumber=DHA-GA-11-1001
+// Admin-only owner lookup by NID or vehicle registration.
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -12,14 +12,30 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const nid = new URL(req.url).searchParams.get("nid") ?? "";
-  const parsed = ownerLookupSchema.safeParse({ nid });
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  const searchParams = new URL(req.url).searchParams;
+  const nid = searchParams.get("nid") ?? "";
+  const licenseNumber = searchParams.get("licenseNumber")?.trim().toUpperCase() ?? "";
+  let owner;
+
+  if (licenseNumber) {
+    const vehicle = await prisma.vehicle.findUnique({
+      where: { licenseNumber },
+      select: { owner: { select: { id: true, fullName: true, isActive: true } } },
+    });
+    owner = vehicle?.owner;
+  } else {
+    const parsed = ownerLookupSchema.safeParse({ nid });
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    }
+    owner = await prisma.owner.findUnique({
+      where: { nid: parsed.data.nid },
+      select: { id: true, fullName: true, isActive: true },
+    });
   }
 
-  const owner = await prisma.owner.findUnique({
-    where: { nid: parsed.data.nid },
+  const ownerWithVehicles = owner && await prisma.owner.findUnique({
+    where: { id: owner.id },
     select: {
       id: true,
       fullName: true,
@@ -32,9 +48,9 @@ export async function GET(req: Request) {
     },
   });
 
-  if (!owner || !owner.isActive) {
-    return NextResponse.json({ error: "No active owner found for this NID" }, { status: 404 });
+  if (!ownerWithVehicles || !ownerWithVehicles.isActive) {
+    return NextResponse.json({ error: licenseNumber ? "No active owner found for this vehicle" : "No active owner found for this NID" }, { status: 404 });
   }
 
-  return NextResponse.json(owner);
+  return NextResponse.json(ownerWithVehicles);
 }

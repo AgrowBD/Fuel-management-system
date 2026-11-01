@@ -1,7 +1,7 @@
 "use client";
 // Operator history page: shows today's and this week's dispensing activity.
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { formatBangladeshDate } from "@/lib/bangladesh-time";
 import { Topbar } from "@/components/layout/Topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +48,7 @@ function TransactionTable({ transactions }: { transactions: Transaction[] }) {
           {transactions.map((t) => (
             <tr key={t.id}>
               <td className="py-2.5 pr-4 text-muted-foreground">
-                {format(new Date(t.transactedAt), "HH:mm")}
+                {formatBangladeshDate(t.transactedAt, "HH:mm")}
               </td>
               <td className="py-2.5 pr-4 font-mono font-medium">{t.vehicle.licenseNumber}</td>
               <td className="py-2.5 pr-4">{VehicleTypeLabel[t.vehicle.vehicleType as VehicleType] ?? t.vehicle.vehicleType}</td>

@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { format } from "date-fns";
+import { formatBangladeshDate, parseBangladeshDate } from "@/lib/bangladesh-time";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
@@ -22,8 +22,8 @@ export async function GET(req: Request) {
       ...(from || to
         ? {
             transactedAt: {
-              ...(from ? { gte: new Date(from) } : {}),
-              ...(to ? { lte: new Date(to + "T23:59:59") } : {}),
+              ...(from ? { gte: parseBangladeshDate(from) } : {}),
+              ...(to ? { lt: parseBangladeshDate(to, true) } : {}),
             },
           }
         : {}),
@@ -50,8 +50,8 @@ export async function GET(req: Request) {
   ];
 
   const rows = transactions.map((t) => [
-    format(t.transactedAt, "yyyy-MM-dd"),
-    format(t.transactedAt, "HH:mm"),
+    formatBangladeshDate(t.transactedAt, "yyyy-MM-dd"),
+    formatBangladeshDate(t.transactedAt, "HH:mm"),
     t.vehicle.licenseNumber,
     t.vehicle.vehicleType,
     t.vehicle.ownerName,
@@ -67,7 +67,7 @@ export async function GET(req: Request) {
     .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
     .join("\n");
 
-  const filename = `fuel-report-${format(new Date(), "yyyy-MM-dd")}.csv`;
+  const filename = `fuel-report-${formatBangladeshDate(new Date(), "yyyy-MM-dd")}.csv`;
 
   return new NextResponse(csv, {
     headers: {

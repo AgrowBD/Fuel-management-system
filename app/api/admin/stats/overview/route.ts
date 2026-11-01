@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { startOfDay } from "date-fns";
+import { startOfBangladeshDay } from "@/lib/bangladesh-time";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -12,7 +12,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const todayStart = startOfDay(new Date());
+  const todayStart = startOfBangladeshDay();
 
   const [
     totalVehicles,

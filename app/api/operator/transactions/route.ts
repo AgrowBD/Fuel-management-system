@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { startOfDay, startOfWeek } from "date-fns";
+import { startOfBangladeshDay, startOfBangladeshWeek } from "@/lib/bangladesh-time";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
@@ -16,8 +16,8 @@ export async function GET(req: Request) {
   const period = searchParams.get("period") ?? "today";
 
   const since = period === "week"
-    ? startOfWeek(new Date(), { weekStartsOn: 6 }) // Saturday week start
-    : startOfDay(new Date());
+    ? startOfBangladeshWeek(new Date(), 6)
+    : startOfBangladeshDay();
 
   const transactions = await prisma.fuelTransaction.findMany({
     where: {

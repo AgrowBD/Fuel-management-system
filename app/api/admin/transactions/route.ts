@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { parseBangladeshDate } from "@/lib/bangladesh-time";
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
@@ -24,8 +25,8 @@ export async function GET(req: Request) {
   if (status) where.status = status;
   if (from || to) {
     where.transactedAt = {
-      ...(from ? { gte: new Date(from) } : {}),
-      ...(to ? { lte: new Date(to) } : {}),
+      ...(from ? { gte: parseBangladeshDate(from) } : {}),
+      ...(to ? { lt: parseBangladeshDate(to, true) } : {}),
     };
   }
   if (vehicleType) {

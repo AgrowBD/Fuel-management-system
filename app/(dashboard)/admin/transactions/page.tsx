@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { format } from "date-fns";
+import { formatBangladeshDate } from "@/lib/bangladesh-time";
 import { Topbar } from "@/components/layout/Topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -120,7 +120,7 @@ export default async function AdminTransactionsPage({
                     {transactions.map((t) => (
                       <tr key={t.id}>
                         <td className="py-2.5 pr-4 text-muted-foreground whitespace-nowrap">
-                          {format(new Date(t.transactedAt), "dd MMM, HH:mm")}
+                          {formatBangladeshDate(t.transactedAt, "dd MMM, HH:mm")}
                         </td>
                         <td className="py-2.5 pr-4 font-mono font-medium">{t.vehicle.licenseNumber}</td>
                         <td className="py-2.5 pr-4 whitespace-nowrap">

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { format, isPast } from "date-fns";
+import { formatBangladeshDate } from "@/lib/bangladesh-time";
 import { Topbar } from "@/components/layout/Topbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +44,7 @@ export default async function OwnerSchedulePage() {
           </Card>
         ) : (
           schedules.map((s) => {
-            const isOverdue = isPast(new Date(s.scheduledDate));
+            const isOverdue = new Date(s.scheduledDate).getTime() < Date.now();
             return (
               <Card key={s.id} className={isOverdue ? "border-amber-300" : ""}>
                 <CardHeader className="pb-2">
@@ -68,7 +68,7 @@ export default async function OwnerSchedulePage() {
                     </div>
                     <div>
                       <p className="text-muted-foreground text-xs">Date</p>
-                      <p className="font-medium">{format(new Date(s.scheduledDate), "dd MMM yyyy")}</p>
+                      <p className="font-medium">{formatBangladeshDate(s.scheduledDate, "dd MMM yyyy")}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground text-xs">Time Slot</p>

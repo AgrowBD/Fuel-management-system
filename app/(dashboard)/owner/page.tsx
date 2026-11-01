@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { checkEligibility } from "@/lib/eligibility";
-import { format } from "date-fns";
+import { formatBangladeshDate } from "@/lib/bangladesh-time";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,7 +94,7 @@ export default async function OwnerOverviewPage() {
                     <div>
                       <p className="text-muted-foreground text-xs">Eligible from</p>
                       <p className="font-medium text-amber-600">
-                        {format(new Date(eligibility.restrictionEndsAt), "dd MMM, HH:mm")}
+                        {formatBangladeshDate(eligibility.restrictionEndsAt, "dd MMM, HH:mm")}
                       </p>
                     </div>
                   ) : null}
@@ -102,7 +102,7 @@ export default async function OwnerOverviewPage() {
                   <div>
                     <p className="text-muted-foreground text-xs">Last fuelled</p>
                     <p className="font-medium">
-                      {lastTx ? format(new Date(lastTx.transactedAt), "dd MMM yyyy") : "Never"}
+                      {lastTx ? formatBangladeshDate(lastTx.transactedAt, "dd MMM yyyy") : "Never"}
                     </p>
                   </div>
 
@@ -110,7 +110,7 @@ export default async function OwnerOverviewPage() {
                     <p className="text-muted-foreground text-xs">Next schedule</p>
                     <p className="font-medium">
                       {schedule
-                        ? `${format(new Date(schedule.scheduledDate), "dd MMM")} · ${schedule.timeSlot}`
+                        ? `${formatBangladeshDate(schedule.scheduledDate, "dd MMM")} · ${schedule.timeSlot}`
                         : "Not assigned"}
                     </p>
                   </div>

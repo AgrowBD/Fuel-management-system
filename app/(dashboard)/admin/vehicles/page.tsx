@@ -35,7 +35,9 @@ const initialForm = {
 };
 
 export default function AdminVehiclesPage() {
+  const [lookupMode, setLookupMode] = useState<"nid" | "license">("nid");
   const [nid, setNid] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
   const [owner, setOwner] = useState<Owner | null>(null);
   const [form, setForm] = useState(initialForm);
   const [lookingUp, setLookingUp] = useState(false);
@@ -46,7 +48,10 @@ export default function AdminVehiclesPage() {
     setLookingUp(true);
     setOwner(null);
     try {
-      const response = await fetch(`/api/admin/owners/lookup?nid=${encodeURIComponent(nid)}`);
+      const query = lookupMode === "nid"
+        ? `nid=${encodeURIComponent(nid)}`
+        : `licenseNumber=${encodeURIComponent(licenseNumber)}`;
+      const response = await fetch(`/api/admin/owners/lookup?${query}`);
       const data = await response.json();
       if (!response.ok) {
         toast.error(data.error ?? "Owner lookup failed");
@@ -106,18 +111,35 @@ export default function AdminVehiclesPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={lookupOwner} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="space-y-1.5">
+                <Label htmlFor="lookup-mode">Search by</Label>
+                <select
+                  id="lookup-mode"
+                  value={lookupMode}
+                  onChange={(event) => setLookupMode(event.target.value as "nid" | "license")}
+                  className="h-9 rounded-md border bg-background px-3 text-sm"
+                >
+                  <option value="nid">Owner NID</option>
+                  <option value="license">Vehicle registration</option>
+                </select>
+              </div>
               <div className="flex-1 space-y-1.5">
-                <Label htmlFor="owner-nid">Owner NID</Label>
+                <Label htmlFor="owner-lookup">{lookupMode === "nid" ? "Owner NID" : "Vehicle registration"}</Label>
                 <Input
-                  id="owner-nid"
-                  value={nid}
-                  onChange={(event) => setNid(event.target.value.replace(/\D/g, "").slice(0, 10))}
-                  inputMode="numeric"
-                  placeholder="10 digit NID"
-                  maxLength={10}
+                  id="owner-lookup"
+                  value={lookupMode === "nid" ? nid : licenseNumber}
+                  onChange={(event) => lookupMode === "nid"
+                    ? setNid(event.target.value.replace(/\D/g, "").slice(0, 10))
+                    : setLicenseNumber(event.target.value.toUpperCase())}
+                  inputMode={lookupMode === "nid" ? "numeric" : "text"}
+                  placeholder={lookupMode === "nid" ? "10 digit NID" : "DHA-GA-11-1001"}
+                  maxLength={lookupMode === "nid" ? 10 : 30}
                 />
               </div>
-              <Button type="submit" disabled={lookingUp || nid.length !== 10}>
+              <Button
+                type="submit"
+                disabled={lookingUp || (lookupMode === "nid" ? nid.length !== 10 : licenseNumber.trim().length === 0)}
+              >
                 {lookingUp ? "Checking..." : "Find owner"}
               </Button>
             </form>
