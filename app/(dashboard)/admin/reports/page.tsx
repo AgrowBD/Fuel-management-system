@@ -101,14 +101,14 @@ export default function AdminAnalyticsPage() {
         {error && <Card><CardContent className="py-6 text-sm text-destructive">{error}</CardContent></Card>}
         {loading && !data ? <AnalyticsSkeleton /> : data && (
           <div key={chartRefreshKey} className="analytics-chart-load">
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
               <Metric title="Fuel dispensed" value={formatLiters(data.summary.totalLiters)} />
               <Metric title="Average per day" value={formatLiters(data.summary.averageDailyLiters)} />
               <Metric title="Projected days remaining" value={data.summary.projectedDaysRemaining ? `${data.summary.projectedDaysRemaining} days` : "Configure forecast"} />
               <Metric title="Projected depletion" value={data.summary.projectedDepletionDate ?? "Not available"} />
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+            <div className="grid gap-8 xl:grid-cols-[1.4fr_1fr]">
               <Card>
                 <CardHeader><CardTitle>Daily demand</CardTitle><CardDescription>Liters dispensed across the selected period</CardDescription></CardHeader>
                 <CardContent><ResponsiveContainer width="100%" height={280}><AreaChart data={data.daily}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey="date" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString()} L`, "Dispensed"]} /><Area type="monotone" dataKey="liters" stroke="#166534" fill="#bbf7d0" strokeWidth={2} /></AreaChart></ResponsiveContainer></CardContent>
@@ -119,7 +119,7 @@ export default function AdminAnalyticsPage() {
               </Card>
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-2">
+            <div className="grid gap-8 xl:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle>Demand by vehicle type</CardTitle><CardDescription>Useful for identifying consumption concentration</CardDescription></CardHeader>
                 <CardContent><ResponsiveContainer width="100%" height={260}><BarChart data={data.byVehicleType} layout="vertical" margin={{ left: 18, right: 12 }}><CartesianGrid strokeDasharray="3 3" horizontal={false} /><XAxis type="number" tick={{ fontSize: 11 }} /><YAxis type="category" dataKey="label" width={105} tick={{ fontSize: 11 }} /><Tooltip formatter={(value) => [`${Number(value).toLocaleString()} L`, "Dispensed"]} /><Bar dataKey="liters" fill="#0f766e" radius={[0, 4, 4, 0]} /></BarChart></ResponsiveContainer></CardContent>
@@ -130,7 +130,7 @@ export default function AdminAnalyticsPage() {
               </Card>
             </div>
 
-            <div className="grid gap-6 xl:grid-cols-2">
+            <div className="grid gap-8 xl:grid-cols-2">
               <Card>
                 <CardHeader><CardTitle>Fuel sales by division</CardTitle><CardDescription>Demonstration distribution across Bangladesh&apos;s eight divisions</CardDescription></CardHeader>
                 <CardContent><ResponsiveContainer width="100%" height={290}><BarChart data={data.byDivision} margin={{ left: 4, right: 12 }}><CartesianGrid stroke="#294039" strokeDasharray="3 3" vertical={false} /><XAxis dataKey="division" tick={{ fill: "#b7cbc2", fontSize: 11 }} interval={0} angle={-22} textAnchor="end" height={52} /><YAxis tick={{ fill: "#b7cbc2", fontSize: 11 }} /><Tooltip contentStyle={{ background: "#182521", border: "1px solid #38534a", color: "#e9f1e8" }} formatter={(value) => [`${Number(value).toLocaleString()} L`, "Sales"]} /><Bar dataKey="liters" fill="#8ac48a" radius={[4, 4, 0, 0]} /></BarChart></ResponsiveContainer>{mode === "real" && <p className="text-xs text-[#9fb5ad]">Division fields are not yet present in real transaction aggregates.</p>}</CardContent>
