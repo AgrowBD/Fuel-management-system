@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { checkEligibility } from "@/lib/eligibility";
 import { formatBangladeshDate } from "@/lib/bangladesh-time";
+import { getSessionOwnerId } from "@/lib/owner-access";
 import { Topbar } from "@/components/layout/Topbar";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,12 +17,7 @@ import type { VehicleType } from "@/types";
 export default async function OwnerOverviewPage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "VEHICLE_OWNER") redirect("/login");
-  const ownerId = session.user.ownerId ?? (
-    await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { ownerId: true },
-    })
-  )?.ownerId;
+  const ownerId = await getSessionOwnerId(session);
   if (!ownerId) redirect("/login");
 
   const vehicles = await prisma.vehicle.findMany({
