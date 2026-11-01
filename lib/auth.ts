@@ -12,6 +12,7 @@ declare module "next-auth" {
       email: string;
       name: string;
       role: Role;
+      ownerId?: string | null;
     };
   }
   interface User {
@@ -19,12 +20,14 @@ declare module "next-auth" {
     email: string;
     name: string;
     role: Role;
+    ownerId?: string | null;
   }
 }
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: Role;
+    ownerId?: string | null;
   }
 }
 
@@ -42,21 +45,26 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
+        try {
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email },
+          });
 
-        if (!user || !user.isActive) return null;
+          if (!user || !user.isActive) return null;
 
-        const passwordMatch = await bcrypt.compare(credentials.password, user.passwordHash);
-        if (!passwordMatch) return null;
+          const passwordMatch = await bcrypt.compare(credentials.password, user.passwordHash);
+          if (!passwordMatch) return null;
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.fullName,
-          role: user.role as Role,
-        };
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.fullName,
+            role: user.role as Role,
+            ownerId: user.ownerId,
+          };
+        } catch {
+          return null;
+        }
       },
     }),
   ],
@@ -67,6 +75,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.ownerId = user.ownerId;
       }
       return token;
     },
@@ -74,6 +83,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       session.user.id = token.id;
       session.user.role = token.role;
+      session.user.ownerId = token.ownerId;
       return session;
     },
   },

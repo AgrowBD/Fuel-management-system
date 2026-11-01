@@ -35,7 +35,7 @@ export async function GET(req: Request) {
       role: true,
       isActive: true,
       createdAt: true,
-      operatorProfile: { select: { pumpName: true, district: true } },
+      operatorProfile: { select: { pumpName: true, district: true, company: { select: { name: true } } } },
       _count: { select: { transactions: true } },
     },
   });

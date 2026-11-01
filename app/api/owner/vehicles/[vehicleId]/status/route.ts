@@ -11,9 +11,12 @@ export async function GET(_req: Request, { params }: { params: Promise<{ vehicle
   if (!session || session.user.role !== "VEHICLE_OWNER") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  if (!session.user.ownerId) {
+    return NextResponse.json({ error: "Owner profile is not linked" }, { status: 403 });
+  }
 
   const { vehicleId } = await params;
-  const vehicle = await prisma.vehicle.findUnique({ where: { id: vehicleId } });
+  const vehicle = await prisma.vehicle.findFirst({ where: { id: vehicleId, ownerId: session.user.ownerId } });
   if (!vehicle) return NextResponse.json({ error: "Vehicle not found" }, { status: 404 });
 
   const eligibility = await checkEligibility(vehicle.licenseNumber);
