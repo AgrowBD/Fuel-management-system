@@ -16,10 +16,16 @@ import type { VehicleType } from "@/types";
 export default async function OwnerOverviewPage() {
   const session = await getServerSession(authOptions);
   if (!session || session.user.role !== "VEHICLE_OWNER") redirect("/login");
-  if (!session.user.ownerId) redirect("/login");
+  const ownerId = session.user.ownerId ?? (
+    await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { ownerId: true },
+    })
+  )?.ownerId;
+  if (!ownerId) redirect("/login");
 
   const vehicles = await prisma.vehicle.findMany({
-    where: { isActive: true, ownerId: session.user.ownerId },
+    where: { isActive: true, ownerId },
     orderBy: { registeredAt: "asc" },
   });
 

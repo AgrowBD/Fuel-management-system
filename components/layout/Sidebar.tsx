@@ -22,7 +22,7 @@ type NavItem = { label: string; href: string; icon: typeof Fuel };
 
 const NAV_ITEMS: Record<Role, NavItem[]> = {
   VEHICLE_OWNER: [
-    { label: "Overview", href: "/owner", icon: Gauge },
+    { label: "Status", href: "/owner/status", icon: Gauge },
     { label: "Fuel History", href: "/owner/history", icon: ClipboardList },
     { label: "My Schedule", href: "/owner/schedule", icon: ListChecks },
   ],

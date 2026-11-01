@@ -10,7 +10,7 @@ export default async function RootPage() {
   if (!session) redirect("/login");
 
   const role = session.user.role;
-  if (role === "VEHICLE_OWNER") redirect("/owner");
+  if (role === "VEHICLE_OWNER") redirect("/owner/history");
   if (role === "OPERATOR") redirect("/operator");
   if (role === "ADMIN") redirect("/admin");
 
