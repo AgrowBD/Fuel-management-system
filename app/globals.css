@@ -123,8 +123,10 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: radial-gradient(oklch(0.35 0.03 155 / 0.08) 0.7px, transparent 0.7px);
-    background-size: 7px 7px;
+    background-image:
+      radial-gradient(oklch(0.35 0.03 155 / 0.1) 0.8px, transparent 0.8px),
+      linear-gradient(135deg, oklch(1 0 0 / 0.22), transparent 42%);
+    background-size: 8px 8px, 100% 100%;
   }
   html {
     @apply font-sans;
@@ -134,6 +136,18 @@
 @layer utilities {
   .page-enter {
     animation: page-enter 420ms ease-out both;
+  }
+
+  .dot-grid {
+    background-image: radial-gradient(currentColor 0.8px, transparent 0.8px);
+    background-size: 12px 12px;
+  }
+
+  .artistic-surface {
+    background-image:
+      radial-gradient(oklch(0.35 0.03 155 / 0.08) 0.8px, transparent 0.8px),
+      linear-gradient(135deg, oklch(1 0 0 / 0.2), transparent 55%);
+    background-size: 9px 9px, 100% 100%;
   }
 }
 

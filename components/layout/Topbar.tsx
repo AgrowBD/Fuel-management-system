@@ -1,6 +1,7 @@
 "use client";
 // Page-level top bar. Visible on all screen sizes.
 // On mobile, shown below the MobileTopbar (which has the hamburger).
+import { LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
@@ -17,8 +18,9 @@ export function Topbar({ title, theme = "light" }: TopbarProps) {
         variant="ghost"
         size="sm"
         onClick={() => signOut({ callbackUrl: "/login" })}
-        className="text-muted-foreground text-sm"
+        className="gap-2 text-muted-foreground text-sm"
       >
+        <LogOut className="size-4" />
         Sign out
       </Button>
     </header>
