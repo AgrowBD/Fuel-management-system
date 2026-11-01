@@ -23,6 +23,7 @@ export default function AdminAnalyticsPage() {
   const [data, setData] = useState<AnalyticsPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [chartRefreshKey, setChartRefreshKey] = useState(0);
   const [error, setError] = useState("");
 
   const fetchAnalytics = useCallback(async () => {
@@ -55,9 +56,14 @@ export default function AdminAnalyticsPage() {
 
   async function refreshAnalytics() {
     setRefreshing(true);
+    setLoading(true);
+    setData(null);
     const refreshed = await fetchAnalytics();
     setRefreshing(false);
-    if (refreshed) toast.success("Analytics refreshed");
+    if (refreshed) {
+      setChartRefreshKey((key) => key + 1);
+      toast.success("Analytics refreshed");
+    }
   }
 
   return (
@@ -94,7 +100,7 @@ export default function AdminAnalyticsPage() {
 
         {error && <Card><CardContent className="py-6 text-sm text-destructive">{error}</CardContent></Card>}
         {loading && !data ? <AnalyticsSkeleton /> : data && (
-          <>
+          <div key={chartRefreshKey} className="analytics-chart-load">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <Metric title="Fuel dispensed" value={formatLiters(data.summary.totalLiters)} />
               <Metric title="Average per day" value={formatLiters(data.summary.averageDailyLiters)} />
@@ -134,7 +140,7 @@ export default function AdminAnalyticsPage() {
                 <CardContent><ResponsiveContainer width="100%" height={290}><ScatterChart margin={{ top: 12, right: 18, bottom: 12, left: 0 }}><CartesianGrid stroke="#294039" strokeDasharray="3 3" /><XAxis type="number" dataKey="price" name="Oil price" unit=" USD" tick={{ fill: "#b7cbc2", fontSize: 11 }} /><YAxis type="number" dataKey="demand" name="Demand" unit=" L/day" tick={{ fill: "#b7cbc2", fontSize: 11 }} /><Tooltip cursor={{ strokeDasharray: "3 3" }} contentStyle={{ background: "#182521", border: "1px solid #38534a", color: "#e9f1e8" }} formatter={(value, name) => [name === "Oil price" ? `$${value}` : `${Number(value).toLocaleString()} L/day`, name]} /><Scatter name="Monthly observations" data={data.oilPriceDemand} fill="#e6b85c" /></ScatterChart></ResponsiveContainer>{mode === "real" && <p className="text-xs text-[#9fb5ad]">Global price correlation is available in Demonstrate mode only.</p>}</CardContent>
               </Card>
             </div>
-          </>
+          </div>
         )}
       </main>
     </div>
