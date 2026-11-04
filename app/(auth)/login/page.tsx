@@ -101,17 +101,6 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        {/* Demo credentials helper */}
-        <Card className="border-dashed bg-card/70">
-          <CardContent className="pt-4 pb-3">
-            <p className="text-xs font-medium text-muted-foreground mb-2">Demo accounts</p>
-            <div className="space-y-1 text-xs text-muted-foreground font-mono">
-              <p>owner@fuel.bd &nbsp;&nbsp;&nbsp;&nbsp;/ Owner@1234</p>
-              <p>operator@fuel.bd / Operator@1234</p>
-              <p>admin@fuel.bd &nbsp;&nbsp;&nbsp;&nbsp;/ Admin@1234</p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
