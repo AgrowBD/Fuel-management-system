@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "npx prisma migrate deploy && npm run build"
   publish = ".next"
 
 [functions."___netlify-server-handler"]
